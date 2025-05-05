@@ -38,5 +38,5 @@ pip install -e . || (
 echo Setup completed successfully.
 
 REM Show help for the CLI tool
-echo Displaying help for schedule-searcher...
-schedule-searcher --help
+echo Displaying help for fib-horarios...
+fib-horarios --help

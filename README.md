@@ -37,9 +37,9 @@ pip install -r requirements.txt
 Invoke subcommands:
 
 ```bash
-schedule-searcher commands                   # show all subcommands and flags
-schedule-searcher search --subjects SUBJ1 SUBJ2 [OPTIONS]  # search schedules
-schedule-searcher subjects [OPTIONS]         # list available subjects
+fib-horarios commands                   # show all subcommands and flags
+fib-horarios search --subjects SUBJ1 SUBJ2 [OPTIONS]  # search schedules
+fib-horarios subjects [OPTIONS]         # list available subjects
 ```
 
 ## Common Options
