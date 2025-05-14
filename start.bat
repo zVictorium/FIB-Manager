@@ -1,7 +1,6 @@
 @echo off
+title FIB Horarios
 cls
-echo Starting fib-horarios app...
-
 REM ensure virtual environment exists
 if not exist ".venv\Scripts\activate" (
     echo Virtual environment not found. Run setup.bat first.

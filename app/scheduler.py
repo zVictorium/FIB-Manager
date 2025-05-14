@@ -1,7 +1,12 @@
 import requests
 import itertools
 import logging
+import os
+import shutil
+import threading
+import time
 from typing import Any, Dict, List, Tuple
+from rich.console import Console
 
 # Initialize module logger
 logger = logging.getLogger(__name__)
@@ -10,8 +15,12 @@ API_BASE_URL: str = "https://api.fib.upc.edu/v2"
 CLIENT_ID: str = "77qvbbQqni4TcEUsWvUCKOG1XU7Hr0EfIs4pacRz"
 LANGUAGE_MAPPING: Dict[str, str] = {"en": "en", "es": "es", "ca": "ca", "": "ca"}
 
+console = Console()
 
-def fetch_classes_data_with_language(quad: str, language: str) -> Dict[str, List[Dict[str, Any]]]:
+
+def fetch_classes_data_with_language(
+    quad: str, language: str
+) -> Dict[str, List[Dict[str, Any]]]:
     """Fetch all class entries for a quadrimester, following pagination."""
     headers = {"Accept-Language": language}
     url = f"{API_BASE_URL}/quadrimestres/{quad}/classes.json?client_id={CLIENT_ID}&lang={language}"
@@ -96,7 +105,9 @@ def parse_classes_data(data: Dict[str, Any]) -> Dict[str, Any]:
     return parsed
 
 
-def get_time_slots(schedule: Dict[str, Any], combo: Dict[str, Any]) -> Dict[Tuple[int, int], List[str]]:
+def get_time_slots(
+    schedule: Dict[str, Any], combo: Dict[str, Any]
+) -> Dict[Tuple[int, int], List[str]]:
     slots = {}
     for subj, grp in combo.items():
         classes = schedule.get(subj, {}).get(str(grp), [])
@@ -106,7 +117,10 @@ def get_time_slots(schedule: Dict[str, Any], combo: Dict[str, Any]) -> Dict[Tupl
     return slots
 
 
-def count_total_days_with_classes(group_slots: Dict[Tuple[int, int], List[str]], subgroup_slots: Dict[Tuple[int, int], List[str]]) -> int:
+def count_total_days_with_classes(
+    group_slots: Dict[Tuple[int, int], List[str]],
+    subgroup_slots: Dict[Tuple[int, int], List[str]],
+) -> int:
     days = set()
     for day, _ in group_slots.keys():
         days.add(day)
@@ -115,7 +129,14 @@ def count_total_days_with_classes(group_slots: Dict[Tuple[int, int], List[str]],
     return len(days)
 
 
-def is_valid_schedule(schedule: Dict[str, Any], combo: Dict[str, Any], blacklisted: List[List[Any]], languages: List[str], start_hour: int, end_hour: int) -> bool:
+def is_valid_schedule(
+    schedule: Dict[str, Any],
+    combo: Dict[str, Any],
+    blacklisted: List[List[Any]],
+    languages: List[str],
+    start_hour: int,
+    end_hour: int,
+) -> bool:
     used_slots = {}
     hours = set()
     for subj, grp in combo.items():
@@ -145,7 +166,13 @@ def is_valid_schedule(schedule: Dict[str, Any], combo: Dict[str, Any], blacklist
     return True
 
 
-def has_valid_schedule(group_slots: Dict[Tuple[int, int], List[str]], subgroup_slots: Dict[Tuple[int, int], List[str]], relax_days: int, start_hour: int, end_hour: int) -> bool:
+def has_valid_schedule(
+    group_slots: Dict[Tuple[int, int], List[str]],
+    subgroup_slots: Dict[Tuple[int, int], List[str]],
+    relax_days: int,
+    start_hour: int,
+    end_hour: int,
+) -> bool:
     all_slots = {**{slot: subjects[:] for slot, subjects in group_slots.items()}}
     for slot, subs in subgroup_slots.items():
         all_slots.setdefault(slot, []).extend(subs)
@@ -177,6 +204,43 @@ def generate_url(combo: Dict[str, Any], quad: str) -> str:
         parts.append(f"a={subj}_{grp_info['group']}")
         parts.append(f"a={subj}_{grp_info['subgroup']}")
     return base + params + "&" + "&".join(parts)
+
+
+def _draw_progress(count: int, total: int) -> None:
+    # throttle updates to at most 20 FPS
+    now = time.monotonic()
+    if hasattr(_draw_progress, "last_time") and count != total:
+        if now - _draw_progress.last_time < 0.05:
+            return
+    _draw_progress.last_time = now
+    # use Rich to clear and redraw
+    os.system("cls")
+
+    size = shutil.get_terminal_size()
+    width, height = size.columns, size.lines
+
+    # build bar and percentage text
+    bar_width = min(50, max(width - 10, 10))
+    filled = int(bar_width * count / total) if total > 0 else bar_width
+    bar = "│" + "█" * filled + "░" * (bar_width - filled) + "│"
+    perc = f"{count}/{total}"
+
+    # vertical centering for two lines
+    top_pad = max((height - 2) // 2, 0)
+    # horizontal centering per line
+    bar_pad = max((width - len(bar)) // 2, 0)
+    perc_pad = max((width - len(perc)) // 2, 0)
+
+    # render centered via Rich
+    console.print("\n" * top_pad, end="")
+    console.print(bar, justify="center")
+    # print percentage in light red
+    console.print(f"[#FF5555]{perc}[/#FF5555]", justify="center")
+
+    # finish and show cursor
+    if count == total:
+        print()
+        print("\033[?25h", end="", flush=True)
 
 
 def get_schedule_combinations(
@@ -275,11 +339,29 @@ def get_schedule_combinations(
             valid_subs.append(combo)
     logger.debug("Valid subgroup combinations count: %d", len(valid_subs))
 
-    # merge
+    # merge schedules with background progress thread
     timetables = []
     urls = []
+    total = max(len(valid_groups) * len(valid_subs), 1)
+    # shared progress state
+    progress = {"count": 0, "total": total, "done": False}
+
+    # launch progress updater thread
+    def _progress_runner():
+        _draw_progress.inited = False
+        while not progress["done"]:
+            _draw_progress(progress["count"], progress["total"])
+            time.sleep(0.05)
+        # final draw
+        _draw_progress(progress["total"], progress["total"])
+
+    thread = threading.Thread(target=_progress_runner, daemon=True)
+    thread.start()
+    # sequential combination checks
     for gcombo in valid_groups:
         for scombo in valid_subs:
+            progress["count"] += 1
+            # validate combined schedule
             if not has_valid_schedule(
                 get_time_slots(group_schedule, gcombo),
                 get_time_slots(subgroup_schedule, scombo),
@@ -288,14 +370,13 @@ def get_schedule_combinations(
                 end_hour,
             ):
                 continue
-            if same_subgroup_as_group:
-                if not all(
-                    validate_same_tens(
-                        int(gcombo[subj]), int(scombo.get(subj, gcombo[subj]))
-                    )
-                    for subj in gcombo
-                ):
-                    continue
+            if same_subgroup_as_group and not all(
+                validate_same_tens(
+                    int(gcombo[subj]), int(scombo.get(subj, gcombo[subj]))
+                )
+                for subj in gcombo
+            ):
+                continue
             merged = {}
             for subj in gcombo:
                 sub = int(scombo.get(subj, gcombo[subj]))
@@ -304,6 +385,10 @@ def get_schedule_combinations(
             merged["url"] = merged_url
             timetables.append(merged)
             urls.append(merged_url)
+
+    # stop progress thread
+    progress["done"] = True
+    thread.join()
 
     result = {
         "total": len(timetables),

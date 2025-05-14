@@ -20,36 +20,62 @@ from rich.text import Text
 from questionary import Style as QStyle
 import sys
 import webbrowser
+import atexit
+from rich.align import Align
 
 # Consolidated map for language normalization
 LANGUAGE_MAP = {
-    "catala": "ca", "català": "ca", "catalan": "ca", "ca": "ca",
-    "castella": "es", "castellà": "es", "castellano": "es", "espanol": "es", "español": "es", "spanish": "es", "es": "es",
-    "english": "en", "anglés": "en", "angles": "en", "inglés": "en", "ingles": "en", "en": "en",
+    "catala": "ca",
+    "català": "ca",
+    "catalan": "ca",
+    "ca": "ca",
+    "castella": "es",
+    "castellà": "es",
+    "castellano": "es",
+    "espanol": "es",
+    "español": "es",
+    "spanish": "es",
+    "es": "es",
+    "english": "en",
+    "anglés": "en",
+    "angles": "en",
+    "inglés": "en",
+    "ingles": "en",
+    "en": "en",
 }
 
+# map language code to flag emoji
+LANG_FLAGS = {"en": "ENG", "es": "ESP", "ca": "CAT"}
+
 # Define a consistent color scheme (red, gray, white)
-THEME = Theme({
-    "primary": "white",
-    "secondary": "bright_black",
-    "accent": "red",
-    "warning": "bold red",
-    "error": "bold red",
-})
+THEME = Theme(
+    {
+        "primary": "white",
+        "secondary": "bright_black",
+        "accent": "red",
+        "warning": "bold red",
+        "error": "bold red",
+    }
+)
 console = Console(theme=THEME)
 
 # Custom questionary style: using gray, light gray, white, light red via hex codes
-Q_STYLE = QStyle([
-    ('qmark', 'fg:#FF5555 bold'),      # light red
-    ('question', 'fg:#FFFFFF'),        # white
-    ('answer', 'fg:#FFFFFF'),          # white
-    ('pointer', 'fg:#666666 bold'),    # gray
-    ('highlighted', 'fg:#FF5555 bold'),# light red
-    ('selected', 'fg:#AAAAAA'),        # light gray
-    ('separator', 'fg:#AAAAAA'),       # light gray
-    ('instruction', 'fg:#AAAAAA'),     # light gray
-    ('text', 'fg:#FFFFFF'),            # white
-])
+Q_STYLE = QStyle(
+    [
+        ("qmark", "fg:#FF5555 bold"),  # light red
+        ("question", "fg:#FFFFFF"),  # white
+        ("answer", "fg:#AAAAAA"),  # light gray (changed)
+        ("pointer", "fg:#666666 bold"),  # gray
+        ("highlighted", "fg:#FF5555 bold"),  # light red
+        ("selected", "fg:#AAAAAA"),  # light gray
+        ("separator", "fg:#AAAAAA"),  # light gray
+        ("instruction", "fg:#AAAAAA"),  # light gray
+        ("text", "fg:#AAAAAA"),  # light gray (changed)
+    ]
+)
+
+# ensure cursor is shown on program exit
+atexit.register(lambda: print("\033[?25h", end="", flush=True))
 
 
 def get_default_quad() -> str:
@@ -76,41 +102,97 @@ def configure_parser(default_quad: str) -> ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     # Enhanced interactive app command
     subparsers.add_parser("app", help="Start enhanced interactive application")
-     
+
     # Search command
     search = subparsers.add_parser("search", help="Search for schedule combinations")
     search.add_argument("--debug", action="store_true", help="Enable debug output")
-    search.add_argument("--quad", default=default_quad, help=f"Quadrimester code, e.g., {default_quad}")
-    search.add_argument("--subjects", nargs="+", required=True, help="List of subject codes")
-    search.add_argument("--start-hour", type=int, default=8, help="Start hour (inclusive)")
+    search.add_argument(
+        "--quad", default=default_quad, help=f"Quadrimester code, e.g., {default_quad}"
+    )
+    search.add_argument(
+        "--subjects", nargs="+", required=True, help="List of subject codes"
+    )
+    search.add_argument(
+        "--start-hour", type=int, default=8, help="Start hour (inclusive)"
+    )
     search.add_argument("--end-hour", type=int, default=20, help="End hour (exclusive)")
-    search.add_argument("--languages", nargs="*", default=[], help="Preferred class languages")
-    search.add_argument("--same-subgroup-as-group", action="store_true",
-                         help="Require subgroup tens match group")
-    search.add_argument("--relax-days", type=int, default=0, help="Number of relaxable off-days")
-    search.add_argument("--blacklisted", nargs="*", default=[], help="Blacklisted subject-group pairs, e.g., IES-101")
-    search.add_argument("--lang", default="en", help="Language code for subject names and API (e.g., en, es, ca)")
+    search.add_argument(
+        "--languages", nargs="*", default=[], help="Preferred class languages"
+    )
+    search.add_argument(
+        "--same-subgroup-as-group",
+        action="store_true",
+        help="Require subgroup tens match group",
+    )
+    search.add_argument(
+        "--relax-days", type=int, default=0, help="Number of relaxable off-days"
+    )
+    search.add_argument(
+        "--blacklisted",
+        nargs="*",
+        default=[],
+        help="Blacklisted subject-group pairs, e.g., IES-101",
+    )
+    search.add_argument(
+        "--lang",
+        default="en",
+        help="Language code for subject names and API (e.g., en, es, ca)",
+    )
 
     # Interface command
     interface = subparsers.add_parser("interface", help="Start interactive interface")
     interface.add_argument("--debug", action="store_true", help="Enable debug output")
-    interface.add_argument("--quad", default=default_quad, help=f"Quadrimester code, e.g., {default_quad}")
-    interface.add_argument("--subjects", nargs="+", required=True, help="List of subject codes")
-    interface.add_argument("--start-hour", type=int, default=8, help="Start hour (inclusive)")
-    interface.add_argument("--end-hour", type=int, default=20, help="End hour (exclusive)")
-    interface.add_argument("--languages", nargs="*", default=[], help="Preferred class languages")
-    interface.add_argument("--same-subgroup-as-group", action="store_true",
-                          help="Require subgroup tens match group")
-    interface.add_argument("--relax-days", type=int, default=0, help="Number of relaxable off-days")
-    interface.add_argument("--blacklisted", nargs="*", default=[], help="Blacklisted subject-group pairs, e.g., IES-101")
-    interface.add_argument("--lang", default="en", help="Language code for subject names and API (e.g., en, es, ca)")
+    interface.add_argument(
+        "--quad", default=default_quad, help=f"Quadrimester code, e.g., {default_quad}"
+    )
+    interface.add_argument(
+        "--subjects", nargs="+", required=True, help="List of subject codes"
+    )
+    interface.add_argument(
+        "--start-hour", type=int, default=8, help="Start hour (inclusive)"
+    )
+    interface.add_argument(
+        "--end-hour", type=int, default=20, help="End hour (exclusive)"
+    )
+    interface.add_argument(
+        "--languages", nargs="*", default=[], help="Preferred class languages"
+    )
+    interface.add_argument(
+        "--same-subgroup-as-group",
+        action="store_true",
+        help="Require subgroup tens match group",
+    )
+    interface.add_argument(
+        "--relax-days", type=int, default=0, help="Number of relaxable off-days"
+    )
+    interface.add_argument(
+        "--blacklisted",
+        nargs="*",
+        default=[],
+        help="Blacklisted subject-group pairs, e.g., IES-101",
+    )
+    interface.add_argument(
+        "--lang",
+        default="en",
+        help="Language code for subject names and API (e.g., en, es, ca)",
+    )
 
     # Subjects command
-    subjects = subparsers.add_parser("subjects", help="Show all available subjects for a quad")
-    subjects.add_argument("-q", "--quad", default=default_quad,
-                           help=f"Quadrimester code, e.g., {default_quad}")
-    subjects.add_argument("-l", "--lang", default="en",
-                           help="Language code for subject names (e.g., en, es, ca)")
+    subjects = subparsers.add_parser(
+        "subjects", help="Show all available subjects for a quad"
+    )
+    subjects.add_argument(
+        "-q",
+        "--quad",
+        default=default_quad,
+        help=f"Quadrimester code, e.g., {default_quad}",
+    )
+    subjects.add_argument(
+        "-l",
+        "--lang",
+        default="en",
+        help="Language code for subject names (e.g., en, es, ca)",
+    )
 
     return parser
 
@@ -120,6 +202,7 @@ def handle_search(args: Namespace) -> None:
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         import app.scheduler as sched
+
         sched.DEBUG = True
 
     # Normalize languages and CLI lang
@@ -145,16 +228,19 @@ def handle_search(args: Namespace) -> None:
 
 def handle_interface(args: Namespace) -> None:
     """Process the 'interface' command: interactive schedule navigation."""
+    # hide cursor when entering interface
+    print("\033[?25l", end="", flush=True)
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         import app.scheduler as sched
+
         sched.DEBUG = True
 
     # Normalize languages and CLI lang same as search
     args.languages = [LANGUAGE_MAP.get(l.lower(), l) for l in args.languages]
     args.lang = LANGUAGE_MAP.get(args.lang.lower(), args.lang)
     blacklisted = parse_blacklisted(args.blacklisted)
-    # Fetch and parse raw classes to build schedule grid later
+    # Fetch and parse raw classes to build Schedule later
     raw_classes = fetch_classes_data_with_language(args.quad, args.lang)
     parsed_classes = parse_classes_data(raw_classes)
     result = get_schedule_combinations(
@@ -172,222 +258,401 @@ def handle_interface(args: Namespace) -> None:
     total = len(timetables)
     if total == 0:
         console.print("No schedules found to display.", style="error", justify="center")
+        # restore cursor before returning
+        print("\033[?25h", end="", flush=True)
         return
 
     import os
+
     try:
         import msvcrt
     except ImportError:
-        console.print("Interactive mode is only supported on Windows.", style="error", justify="center")
+        console.print(
+            "Interactive mode is only supported on Windows.",
+            style="error",
+            justify="center",
+        )
+        # restore cursor before returning
+        print("\033[?25h", end="", flush=True)
         return
 
     idx = 0
+
     def display(i: int) -> None:
-        os.system('cls')
+        os.system("cls")
         sched_item = timetables[i]
         # Show message if no subjects in this schedule
-        non_url = [k for k in sched_item.keys() if k != 'url']
+        non_url = [k for k in sched_item.keys() if k != "url"]
         if not non_url:
-            console.print("No sessions available for this schedule.", style="warning", justify="center")
-            console.print("Use ←/→ arrows to navigate, q to quit", style="warning", justify="center")
+            console.print(
+                "No sessions available for this schedule.",
+                style="warning",
+                justify="center",
+            )
+            console.print(
+                "Use ←\→ arrows to navigate, q to quit",
+                style="warning",
+                justify="center",
+            )
             return
         # Subject details table with styled header (white label + red count)
-        header = Text("Schedule ", style="white") + Text(f"{i+1}/{total}", style="#FF5555")
+        header = Text("Schedule ", style="white") + Text(
+            f"{i+1}/{total}", style="#FF5555"
+        )
         subj_table = Table(title=header, box=box.SIMPLE)
-        subj_table.add_column("Subject", style="primary")
-        subj_table.add_column("Group", style="accent")
-        subj_table.add_column("Subgroup", style="accent")
+        subj_table.add_column("Subject", style="primary", header_style="bold")
+        subj_table.add_column("Group", style="accent", header_style="bold")
+        subj_table.add_column("Subgroup", style="accent", header_style="bold")
         for subj, info in sched_item.items():
-            if subj == 'url': continue
-            subj_table.add_row(subj, str(info['group']), str(info['subgroup']))
+            if subj == "url":
+                continue
+            subj_table.add_row(subj, str(info["group"]), str(info["subgroup"]))
         # Grid table
-        grid: dict[tuple[int,int], list[str]] = {}
+        grid: dict[tuple[int, int], list[str]] = {}
         for subj, info in sched_item.items():
-            if subj == 'url': continue
-            for grp in (info['group'], info['subgroup']):
+            if subj == "url":
+                continue
+            for grp in (info["group"], info["subgroup"]):
                 for ci in parsed_classes.get(subj, {}).get(str(grp), []):
-                    grid.setdefault((ci['day'], ci['hour']), []).append(subj)
-        grid_table = Table(show_lines=True, title="Schedule Grid", header_style="secondary", box=box.SIMPLE)
-        grid_table.add_column("Hour/Day", style="primary")
-        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+                    grid.setdefault((ci["day"], ci["hour"]), []).append(subj)
+        grid_table = Table(
+            show_lines=True, title="Schedule", header_style="secondary", box=box.SIMPLE
+        )
+        grid_table.add_column("Hour/Day", style="primary", header_style="bold")
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
         for d in days:
-            grid_table.add_column(d, style="accent")
+            grid_table.add_column(d, style="accent", header_style="bold")
         for h in range(args.start_hour, args.end_hour):
-            row = [str(h)] + [", ".join(grid.get((i+1, h), [])) for i in range(len(days))]
+            row = [str(h)] + [
+                ", ".join(grid.get((i + 1, h), [])) for i in range(len(days))
+            ]
             grid_table.add_row(*row)
         console.print(grid_table, justify="center")
         console.print(subj_table, justify="center")
         console.print()
         console.print()
-        console.print(Text(f"URL: {sched_item['url']}", style="primary", no_wrap=True), justify="center")
-        console.print("Use ←/→ arrows to navigate, q to quit", style="warning", justify="center")
+        console.print(
+            Text(f"URL: {sched_item['url']}", style="primary", no_wrap=True),
+            justify="center",
+        )
+        console.print(
+            "Use ←\→ arrows to navigate, q to quit", style="warning", justify="center"
+        )
 
     display(idx)
     while True:
         key = msvcrt.getwch()
-        if key == '\xe0':  # special key prefix
+        if key == "\xe0":  # special key prefix
             code = msvcrt.getwch()
-            if code == 'M':  # right arrow
+            if code == "M":  # right arrow
                 idx = (idx + 1) % total
                 display(idx)
-            elif code == 'K':  # left arrow
+            elif code == "K":  # left arrow
                 idx = (idx - 1) % total
                 display(idx)
-        elif key.lower() == 'q':
+        elif key.lower() == "q":
             console.print("Exiting interface.", style="warning", justify="center")
+            # restore cursor before leaving
+            print("\033[?25h", end="", flush=True)
             break
+
+    # clear screen and return (cursor already restored)
+    os.system("cls")
 
 
 def handle_app(args: Namespace) -> None:
     # Initial title screen
-    os.system('cls')
-    console.rule(style="secondary")
-    # Generate FIGlet title and pad all lines to equal length
-    title = figlet_format("FIB Horarios", font="chunky")
+    os.system("cls")
+    # hide cursor on splash/menu
+    print("\033[?25l", end="", flush=True)
+    # Generate FIGlet title and compute vertical and horizontal centering
+    splash = figlet_format("FIB Horarios", font="chunky")
+    subtitle = "Press any key to start"
+
+    # Vertical centering
+    height = console.height
+    total_lines = splash.count("\n") + 1
+    top_pad = max((height - total_lines) // 2, 0)
+    for _ in range(top_pad):
+        console.print()
+
+    # Manual horizontal centering of each FIGlet line
     width = console.width
-    lines = title.splitlines()[:-1]  # skip the last line
-    for line in lines:
+    for line in splash.splitlines():
         pad = max((width - len(line)) // 2, 0)
         console.print(" " * pad + line, style="accent", markup=False)
-    console.rule(style="secondary")
-    console.print("Press any key to start", style="warning", justify="center")
+
+    # Subtitle (you can still use justify here)
+    console.print(subtitle, style="warning", justify="center")
+
+    # Wait for key press
     msvcrt.getwch()
-    os.system('cls')
     # Main menu loop
     while True:
         # Clear screen before showing main menu form
-        os.system('cls')
+        os.system("cls")
         choice = questionary.select(
-            "Select option:", choices=["Search schedules", "List subjects", "Quit"], style=Q_STYLE
+            "Select option:",
+            choices=["Search schedules", "List subjects", "Quit"],
+            style=Q_STYLE,
         ).ask()
-        os.system('cls')
+        os.system("cls")
         if choice == "Quit" or choice is None:
+            # restore cursor on exit
+            print("\033[?25h", end="", flush=True)
             sys.exit(0)
 
         if choice == "List subjects":
             # List subjects and await user input to exit or return
             # Prompt quadrimester code with custom style and clear screen after input
-            quad = questionary.text("Quadrimester code:", default=get_default_quad(), style=Q_STYLE).ask()
-            # Prompt language code with custom style
-            lang_choice = questionary.select(
-                "Language code:", choices=["en", "es", "ca"], default="en", style=Q_STYLE
+            quad = questionary.text(
+                "Quadrimester code:", default=get_default_quad(), style=Q_STYLE
             ).ask()
-            os.system('cls')
+            # Prompt language in natural language
+            lang_choice = questionary.select(
+                "Language:",
+                choices=["English", "Spanish", "Catalan"],
+                default="English",
+                style=Q_STYLE,
+            ).ask()
+            os.system("cls")
             lang_choice = LANGUAGE_MAP.get(lang_choice.lower(), lang_choice)
             raw = fetch_classes_data_with_language(quad, lang_choice)
             parsed = parse_classes_data(raw)
             names = fetch_subject_names(lang_choice)
             # Set subject list colors: light red header, light gray codes, white names
-            table = Table(title=f"Subjects {quad} ({lang_choice})", header_style="bright_red")
-            table.add_column("Code", style="bright_black")
-            table.add_column("Name", style="white")
+            console.print()
+            table = Table(
+                title=f"Subjects {quad}", header_style="bright_red"
+            )
+            # right-justify the code column
+            table.add_column("Code", justify="right", style="bright_black", header_style="bold")
+            table.add_column("Name", style="white", header_style="bold")
             for subj in sorted(parsed.keys()):
                 table.add_row(subj, names.get(subj, subj))
-            console.print(table, justify="center")
-            # Prompt for exit or back
-            # Improved navigation prompt, clear screen on go-back
-            console.print("Press Esc to go back or 'q' to quit", style="bright_red", justify="center")
+            console.print(
+                Align(table, align="center")
+            )
+            # Footer matches schedule searcher style/message
+            console.print()
+            console.print(
+                Align(Text("Q to quit\nESC to leave", style="accent", justify="center"), align="center")
+            )
             key = msvcrt.getwch()
-            if key == '\x1b':  # ESC key
-                os.system('cls')
+            if key == "\x1b":  # ESC key
+                # restore cursor if leaving subjects view
+                print("\033[?25h", end="", flush=True)
+                os.system("cls")
                 continue
-            elif key.lower() == 'q':
+            elif key.lower() == "q":
+                print("\033[?25h", end="", flush=True)
                 sys.exit(0)
 
         elif choice == "Search schedules":
-            # Collect parameters with custom style
-            quad = questionary.text("Quadrimester code:", default=get_default_quad(), style=Q_STYLE).ask()
-            # Subjects input, convert to uppercase codes
-            subjects = questionary.text("Subjects (space-separated):", style=Q_STYLE).ask().split()
-            subjects = [s.upper() for s in subjects]
-            start_hour = int(questionary.text("Start hour:", default="8", style=Q_STYLE).ask())
-            end_hour = int(questionary.text("End hour:", default="20", style=Q_STYLE).ask())
-            # Languages selection list (natural names), must choose at least one
-            languages_nat = questionary.checkbox(
-                "Select languages:", choices=["English", "Spanish", "Catalan"], style=Q_STYLE,
-                validate=lambda ans: True if ans and len(ans) > 0 else "Select at least one"
+            # Collect quadrimester
+            quad = questionary.text(
+                "Quadrimester code:", default=get_default_quad(), style=Q_STYLE
             ).ask()
-            # Additional schedule parameters
-            same = questionary.confirm("Require same subgroup tens as group?", default=True, style=Q_STYLE).ask()
-            relax = int(questionary.text("Relaxable off-days:", default="0", style=Q_STYLE).ask())
-            black = questionary.text("Blacklisted pairs (space-separated):", default="", style=Q_STYLE).ask().split()
-            # Clear screen before showing results or proceeding
-            os.system('cls')
-            # Map natural language names to codes, derive primary lang
+
+            # 1) Choose languages up-front (needed for schedule filtering)
+            languages_nat = questionary.checkbox(
+                "Select languages:",
+                choices=["English", "Spanish", "Catalan"],
+                style=Q_STYLE,
+                validate=lambda ans: (
+                    True if ans and len(ans) > 0 else "Select at least one"
+                ),
+            ).ask()
+            os.system("cls")
+
+            # normalize languages and pick primary for API queries
             languages = [LANGUAGE_MAP.get(n.lower(), n) for n in languages_nat]
             lang_choice = languages[0]
-            # Normalize inputs
+
+            # 2) fetch subjects in English for selection (always CODE – NAME)
+            raw_classes = fetch_classes_data_with_language(quad, "en")
+            parsed_classes = parse_classes_data(raw_classes)
+            names = fetch_subject_names("en")
+            subject_choices = [
+                f"{code} - {names.get(code, code)}"
+                for code in sorted(parsed_classes.keys())
+            ]
+
+            # 3) multiselect subjects, then extract codes
+            subjects_selected = questionary.checkbox(
+                "Select subjects:",
+                choices=subject_choices,
+                style=Q_STYLE,
+                validate=lambda ans: (
+                    True if ans and len(ans) > 0 else "Select at least one"
+                ),
+            ).ask()
+            subjects = [item.split(" - ", 1)[0] for item in subjects_selected]
+
+            # 4) hour selections between 8 and 21
+            hours = [str(h) for h in range(8, 22)]
+            start_hour = int(
+                questionary.select("Start hour:", choices=hours, style=Q_STYLE).ask()
+            )
+            end_hour = int(
+                questionary.select("End hour:", choices=hours, style=Q_STYLE).ask()
+            )
+
+            # 5) blacklisted subject-group pairs
+            blacklist_choices = [
+                f"{subj}-{grp}"
+                for subj, groups in parsed_classes.items()
+                for grp in groups.keys()
+                if grp.isdigit()
+            ]
+            black = questionary.checkbox(
+                "Blacklisted pairs:", choices=blacklist_choices, style=Q_STYLE
+            ).ask()
+
+            # 6) other params
+            same = questionary.confirm(
+                "Require same subgroup tens as group?", default=True, style=Q_STYLE
+            ).ask()
+            relax = int(
+                questionary.text(
+                    "Relaxable off-days:", default="0", style=Q_STYLE
+                ).ask()
+            )
+
+            os.system("cls")
+
+            # normalize blacklisted and run search
             blacklisted = parse_blacklisted(black)
-            # Fetch timetables
             result = get_schedule_combinations(
-                quad, subjects, start_hour, end_hour,
-                languages, same, relax, blacklisted, lang_choice
+                quad,
+                subjects,
+                start_hour,
+                end_hour,
+                languages,
+                same,
+                relax,
+                blacklisted,
+                lang_choice,
             )
             timetables = result.get("timetables", [])
             if not timetables:
                 console.print("No schedules found.", style="error", justify="center")
-                os.system('cls')
+                os.system("cls")
                 continue
             raw_data = fetch_classes_data_with_language(quad, lang_choice)
             parsed_classes = parse_classes_data(raw_data)
             total = len(timetables)
             # Define pastel colors per subject
-            all_subjects = sorted({s for sched in timetables for s in sched if s != 'url'})
-            colors = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#FFECB3", "#D7BDE2", "#AED6F1"]
-            subject_colors = {subj: colors[i % len(colors)] for i, subj in enumerate(all_subjects)}
+            all_subjects = sorted(
+                {s for sched in timetables for s in sched if s != "url"}
+            )
+            colors = [
+                "#FFB3BA",
+                "#FFDFBA",
+                "#FFFFBA",
+                "#BAFFC9",
+                "#BAE1FF",
+                "#FFECB3",
+                "#D7BDE2",
+                "#AED6F1",
+            ]
+            subject_colors = {
+                subj: colors[i % len(colors)] for i, subj in enumerate(all_subjects)
+            }
             idx = 0
+
             # Navigate schedules
             def render(i: int) -> None:
-                os.system('cls')
+                os.system("cls")
                 sched_item = timetables[i]
-                non_url = [k for k in sched_item.keys() if k != 'url']
+                non_url = [k for k in sched_item.keys() if k != "url"]
                 if not non_url:
-                    console.print("No sessions available for this schedule.", style="warning", justify="center")
-                    console.print("Use ←/→ to navigate, q to quit", style="warning", justify="center")
+                    console.print(
+                        "No sessions available for this schedule.",
+                        style="warning",
+                        justify="center",
+                    )
+                    console.print(
+                        "Use ←\→ to navigate, q to quit",
+                        style="warning",
+                        justify="center",
+                    )
                     return
                 # Colored schedule header: white label, red count
                 header = (
                     Text("Schedule ", style="white")
-                    + Text(str(i+1), style="#FF5555")
+                    + Text(str(i + 1), style="#FF5555")
                     + Text("/", style="bright_black")
                     + Text(str(total), style="#FF5555")
                 )
                 console.rule(header, style="accent")
                 # Subject details
-                subj_table = Table(title="Subjects", header_style="secondary")
-                subj_table.add_column("Subject")
-                subj_table.add_column("Group")
-                subj_table.add_column("Subgroup")
+                subj_table = Table(
+                    title="Subjects and groups", header_style="secondary"
+                )
+                subj_table.add_column("Subject", justify="center", header_style="bold")
+                subj_table.add_column("Group", justify="center", header_style="bold")
+                subj_table.add_column("Subgroup", justify="center", header_style="bold")
                 sched_item = timetables[i]
                 for subj, info in sched_item.items():
-                    if subj == 'url': continue
+                    if subj == "url":
+                        continue
                     subj_table.add_row(
-                        Text(subj, style=subject_colors.get(subj, 'primary')), 
-                        Text(str(info['group']), style=subject_colors.get(subj, 'primary')),
-                        Text(str(info['subgroup']), style=subject_colors.get(subj, 'primary'))
+                        Text(subj, style=subject_colors.get(subj, "primary")),
+                        Text(
+                            str(info["group"]),
+                            style=subject_colors.get(subj, "primary"),
+                        ),
+                        Text(
+                            str(info["subgroup"]),
+                            style=subject_colors.get(subj, "primary"),
+                        ),
                     )
-                # Schedule grid
-                days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+                # Schedule
+                days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
                 hours = list(range(start_hour, end_hour))
                 grid = {}
                 for subj, info in sched_item.items():
-                    if subj == 'url': continue
-                    for grp in (info['group'], info['subgroup']):
+                    if subj == "url":
+                        continue
+                    for grp in (info["group"], info["subgroup"]):
                         for ci in parsed_classes.get(subj, {}).get(str(grp), []):
-                            grid.setdefault((ci['day'], ci['hour']), []).append(subj)
-                grid_table = Table(show_lines=True, title="Schedule Grid", box=box.SIMPLE_HEAVY, header_style="secondary")
-                grid_table.add_column(justify="right")
+                            grid.setdefault((ci["day"], ci["hour"]), []).append(
+                                (subj, ci, info)
+                            )
+                grid_table = Table(
+                    show_lines=True,
+                    title="Schedule",
+                    box=box.SIMPLE_HEAVY,
+                    header_style="secondary",
+                )
+                grid_table.add_column(justify="right", header_style="bold")
                 for d in days:
-                    grid_table.add_column(d, style="accent")
+                    grid_table.add_column(
+                        d, style="accent", header_style="bold", justify="center"
+                    )
                 for h in hours:
                     # Build styled cell per day
                     row = [str(h)]
                     for di in range(len(days)):
-                        subs = grid.get((di+1, h), [])
+                        entries = grid.get((di + 1, h), [])
                         cell = Text()
-                        for sub in subs:
-                            cell.append(sub, style=subject_colors.get(sub, 'primary'))
-                            cell.append(" ")
+                        for subj, ci, info in entries:
+                            # show SUBJECT, first letter of type, and flag emoji
+                            t = ci.get("type", "")
+                            letter = t[0].upper() if t else ""
+                            flag = ""
+                            for lang in ci.get("language", "").split(","):
+                                flag += " " + LANG_FLAGS.get(
+                                    LANGUAGE_MAP.get(lang.lower(), "en"), ""
+                                )
+                            flag = flag.strip()
+                            group = info["group"] if letter == "T" else info["subgroup"]
+                            line1 = f"{subj} {group}{letter}"
+                            line2 = f"{ci.get('classroom', '')}".replace(",", "")
+                            line3 = f"{flag}"
+                            line = f"{line1}\n{line2}\n{line3}"
+                            cell.append(line, style=subject_colors.get(subj, "primary"))
                         row.append(cell)
                     grid_table.add_row(*row)
                 console.print()
@@ -398,29 +663,38 @@ def handle_app(args: Namespace) -> None:
                 console.print(subj_table, justify="center")
                 console.print()
                 console.print()
-                console.print(Text(f"URL\n{sched_item['url']}", style="primary", no_wrap=True), justify="center")
+                console.print(
+                    "Press SPACE to open schedule URL",
+                    style="primary",
+                    justify="center",
+                )
                 console.print()
+                console.print("←\→ to navigate", style="warning", justify="center")
                 console.print()
-                console.print("←/→ to navigate, Q to quit", style="warning", justify="center")
-                console.print("Press any key to open schedule URL in browser", style="accent", justify="center")
-                msvcrt.getwch()
-                webbrowser.open(sched_item['url'])
+                console.print(
+                    "Q to quit\nESC to leave", style="accent", justify="center"
+                )
 
-            # Navigation loop
             render(idx)
             while True:
                 key = msvcrt.getwch()
-                if key == '\xe0':
+                if key == " ":
+                    # Open the current schedule URL
+                    webbrowser.open(timetables[idx]["url"])
+                elif key == "\xe0":  # arrow keys
                     code = msvcrt.getwch()
-                    if code == 'M':
+                    if code == "M":  # right arrow
                         idx = (idx + 1) % total
                         render(idx)
-                    elif code == 'K':
+                    elif code == "K":  # left arrow
                         idx = (idx - 1) % total
                         render(idx)
-                elif key.lower() == 'q':
+                elif key.lower() == "q":
+                    print("\033[?25h", end="", flush=True)
+                    sys.exit(0)
+                elif key == "\x1b":  # ESC
                     break
-            os.system('cls')
+            os.system("cls")
             continue
         else:
             continue
@@ -434,12 +708,19 @@ def handle_subjects(args: Namespace) -> None:
     names = fetch_subject_names(lang)
     # Display subjects in a styled table
     # Use only gray, light gray, white, and light red for subject list
-    table = Table(title=f"Subjects {args.quad} ({lang})", header_style="bright_red", box=box.SIMPLE)
-    table.add_column("Code", style="bright_black")
-    table.add_column("Name", style="white")
+    table = Table(
+        title=f"Subjects {args.quad} ({lang})",
+        header_style="bright_red",
+        box=box.SIMPLE,
+    )
+    # right-justify the code column
+    table.add_column("Code", justify="right", style="bright_black", header_style="bold")
+    table.add_column("Name", style="white", header_style="bold")
     for subj in sorted(parsed.keys()):
         table.add_row(subj, names.get(subj, subj))
-    console.print(table, justify="center")
+    console.print(
+        Align(table, align="center")
+    )
 
 
 def main() -> None:
