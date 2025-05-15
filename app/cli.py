@@ -403,16 +403,25 @@ def handle_app(args: Namespace) -> None:
             sys.exit(0)
 
         if choice == "List subjects":
-            # List subjects and await user input to exit or return
-            # Prompt quadrimester code with custom style and clear screen after input
-            quad = questionary.text(
-                "Quadrimester code:", default=get_default_quad(), style=Q_STYLE
+            # Prompt quadrimester via two selectors
+            # year selector
+            year_choices = [
+                f"{date.today().year-1} (Last year)",
+                f"{date.today().year} (Current year)",
+                f"{date.today().year+1} (Next year)",
+            ]
+            year = int(questionary.select(
+                "Select Year:", choices=year_choices, style=Q_STYLE
+            ).ask().split()[0])
+            # quad number selector
+            quad_num = questionary.select(
+                "Select Quadrimester:", choices=["1", "2"], style=Q_STYLE
             ).ask()
-            # Prompt language in natural language
+            quad = f"{year}Q{quad_num}"
+            # Ask for language before fetching subjects
             lang_choice = questionary.select(
-                "Language:",
+                "Select language:",
                 choices=["English", "Spanish", "Catalan"],
-                default="English",
                 style=Q_STYLE,
             ).ask()
             os.system("cls")
@@ -421,6 +430,7 @@ def handle_app(args: Namespace) -> None:
             parsed = parse_classes_data(raw)
             names = fetch_subject_names(lang_choice)
             # Set subject list colors: light red header, light gray codes, white names
+            console.print()
             console.print()
             table = Table(
                 title=f"Subjects {quad}", header_style="bright_red"
@@ -449,59 +459,62 @@ def handle_app(args: Namespace) -> None:
                 sys.exit(0)
 
         elif choice == "Search schedules":
-            # Collect quadrimester
-            quad = questionary.text(
-                "Quadrimester code:", default=get_default_quad(), style=Q_STYLE
+            # 1) Choose quad via two selectors
+            year_choices = [
+                f"{date.today().year-1} (Last year)",
+                f"{date.today().year} (Current year)",
+                f"{date.today().year+1} (Next year)",
+            ]
+            year = int(questionary.select(
+                "Select Year:", choices=year_choices, style=Q_STYLE
+            ).ask().split()[0])
+            quad_num = questionary.select(
+                "Select Quadrimester:", choices=["1", "2"], style=Q_STYLE
             ).ask()
+            quad = f"{year}Q{quad_num}"
 
-            # 1) Choose languages up-front (needed for schedule filtering)
+            # 2) Choose languages up-front
             languages_nat = questionary.checkbox(
                 "Select languages:",
                 choices=["English", "Spanish", "Catalan"],
                 style=Q_STYLE,
-                validate=lambda ans: (
-                    True if ans and len(ans) > 0 else "Select at least one"
-                ),
+                validate=lambda ans: True if ans and len(ans) > 0 else "Select at least one",
             ).ask()
-            os.system("cls")
-
-            # normalize languages and pick primary for API queries
             languages = [LANGUAGE_MAP.get(n.lower(), n) for n in languages_nat]
             lang_choice = languages[0]
 
-            # 2) fetch subjects in English for selection (always CODE – NAME)
-            raw_classes = fetch_classes_data_with_language(quad, "en")
-            parsed_classes = parse_classes_data(raw_classes)
+            # 3) Fetch & parse to build subject list
+            raw_sel = fetch_classes_data_with_language(quad, "en")
+            parsed_sel = parse_classes_data(raw_sel)
             names = fetch_subject_names("en")
+
+            # 4) Select subjects
             subject_choices = [
                 f"{code} - {names.get(code, code)}"
-                for code in sorted(parsed_classes.keys())
+                for code in sorted(parsed_sel.keys())
             ]
-
-            # 3) multiselect subjects, then extract codes
-            subjects_selected = questionary.checkbox(
+            subjects_sel = questionary.checkbox(
                 "Select subjects:",
                 choices=subject_choices,
                 style=Q_STYLE,
-                validate=lambda ans: (
-                    True if ans and len(ans) > 0 else "Select at least one"
-                ),
+                validate=lambda ans: True if ans and len(ans) > 0 else "Select at least one",
             ).ask()
-            subjects = [item.split(" - ", 1)[0] for item in subjects_selected]
+            subjects = [item.split(" - ", 1)[0] for item in subjects_sel]
 
-            # 4) hour selections between 8 and 21
-            hours = [str(h) for h in range(8, 22)]
-            start_hour = int(
-                questionary.select("Start hour:", choices=hours, style=Q_STYLE).ask()
-            )
-            end_hour = int(
-                questionary.select("End hour:", choices=hours, style=Q_STYLE).ask()
-            )
+            # 5) hour selections: start 8–20, end start+1–21
+            start_choices = [str(h) for h in range(8, 21)]
+            start_hour = int(questionary.select(
+                "Start hour:", choices=start_choices, style=Q_STYLE
+            ).ask())
+            end_choices = [str(h) for h in range(start_hour+1, 22)]
+            end_hour = int(questionary.select(
+                "End hour:", choices=end_choices, style=Q_STYLE
+            ).ask())
 
-            # 5) blacklisted subject-group pairs
+            # 6) blacklisted subject-group pairs
             blacklist_choices = [
                 f"{subj}-{grp}"
-                for subj, groups in parsed_classes.items()
+                for subj, groups in parsed_sel.items()
                 for grp in groups.keys()
                 if grp.isdigit()
             ]
@@ -509,15 +522,15 @@ def handle_app(args: Namespace) -> None:
                 "Blacklisted pairs:", choices=blacklist_choices, style=Q_STYLE
             ).ask()
 
-            # 6) other params
+            # 7) other params
             same = questionary.confirm(
                 "Require same subgroup tens as group?", default=True, style=Q_STYLE
             ).ask()
-            relax = int(
-                questionary.text(
-                    "Relaxable off-days:", default="0", style=Q_STYLE
-                ).ask()
-            )
+            # free-days selector 0–5
+            relax_choices = [str(i) for i in range(6)]
+            relax = int(questionary.select(
+                "Relaxable off-days:", choices=relax_choices, style=Q_STYLE
+            ).ask())
 
             os.system("cls")
 
@@ -560,6 +573,8 @@ def handle_app(args: Namespace) -> None:
                 subj: colors[i % len(colors)] for i, subj in enumerate(all_subjects)
             }
             idx = 0
+            # toggle state: True for grid view, False for group table view
+            show_grid = [True]
 
             # Navigate schedules
             def render(i: int) -> None:
@@ -573,7 +588,7 @@ def handle_app(args: Namespace) -> None:
                         justify="center",
                     )
                     console.print(
-                        "Use ←\→ to navigate, q to quit",
+                        "Use ←→ to navigate, q to quit",
                         style="warning",
                         justify="center",
                     )
@@ -655,12 +670,14 @@ def handle_app(args: Namespace) -> None:
                             cell.append(line, style=subject_colors.get(subj, "primary"))
                         row.append(cell)
                     grid_table.add_row(*row)
+                # only one view at a time
                 console.print()
                 console.print()
-                console.print(grid_table, justify="center")
-                console.print()
-                console.print()  # spacing between grid and subjects
-                console.print(subj_table, justify="center")
+                if show_grid[0]:
+                    console.print(grid_table, justify="center")
+                else:
+                    console.print(subj_table, justify="center")
+
                 console.print()
                 console.print()
                 console.print(
@@ -668,8 +685,13 @@ def handle_app(args: Namespace) -> None:
                     style="primary",
                     justify="center",
                 )
+                console.print(
+                    "Press TAB to show groups" if show_grid[0] else "Press TAB to show schedule",
+                    style="primary",
+                    justify="center",
+                )
                 console.print()
-                console.print("←\→ to navigate", style="warning", justify="center")
+                console.print("←→ to navigate", style="warning", justify="center")
                 console.print()
                 console.print(
                     "Q to quit\nESC to leave", style="accent", justify="center"
@@ -681,6 +703,10 @@ def handle_app(args: Namespace) -> None:
                 if key == " ":
                     # Open the current schedule URL
                     webbrowser.open(timetables[idx]["url"])
+                elif key == "\t":
+                    # toggle between grid and group views
+                    show_grid[0] = not show_grid[0]
+                    render(idx)
                 elif key == "\xe0":  # arrow keys
                     code = msvcrt.getwch()
                     if code == "M":  # right arrow
