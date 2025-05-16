@@ -1,4 +1,5 @@
 @echo off
+title FIB Manager Installer
 cls
 echo Setting up Python environment...
 
@@ -38,5 +39,5 @@ pip install -e . || (
 echo Setup completed successfully.
 
 REM Show help for the CLI tool
-echo Displaying help for fib-horarios...
-fib-horarios --help
+echo Displaying help for fib-manager...
+fib-manager --help

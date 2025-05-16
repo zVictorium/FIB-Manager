@@ -94,7 +94,7 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=URL,
     packages=find_packages(),
-    entry_points={"console_scripts": ["fib-horarios=app.cli:main"]},
+    entry_points={"console_scripts": ["fib-manager=app.cli:main"]},
     install_requires=REQUIRED,
     include_package_data=True,
     license=LICENSE,

@@ -1,5 +1,5 @@
 @echo off
-title FIB Horarios
+title FIB Manager
 cls
 REM ensure virtual environment exists
 if not exist ".venv\Scripts\activate" (
@@ -14,6 +14,6 @@ call .venv\Scripts\activate || (
 )
 
 REM run the CLI app
-fib-horarios app %*
+fib-manager app %*
 
 pause
