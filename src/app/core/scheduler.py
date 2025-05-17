@@ -5,27 +5,21 @@ Module for generating valid class schedules.
 import itertools
 import logging
 import sys
-import threading
 from typing import Any, Dict, List, Tuple, Set
-
+import requests
+from app.core.constants import API_BASE_URL, CLIENT_ID
 from app.core.constants import LANGUAGE_MAPPING, DEFAULT_LANGUAGE
 from app.api import fetch_classes_data, generate_schedule_url
 from app.core.parser import parse_classes_data, split_schedule_by_group_type
-from app.core.utils import run_progress_thread
 
 # Initialize module logger
 logger = logging.getLogger(__name__)
-
-# Debug flag
-DEBUG = False
-
 
 # -------------------------
 # API and Data Fetch Helpers
 # -------------------------
 def get_json_response(url: str, language: str) -> Dict[str, Any]:
     headers = {"Accept-Language": language}
-    logger.debug("Requesting data: %s", url)
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         logger.error("Failed to fetch data: HTTP %s", response.status_code)
@@ -46,7 +40,6 @@ def get_paginated_data(base_url: str, language: str) -> List[Dict[str, Any]]:
 def fetch_classes_data(quadrimester: str, language: str) -> Dict[str, List[Dict[str, Any]]]:
     url = f"{API_BASE_URL}/quadrimestres/{quadrimester}/classes.json?client_id={CLIENT_ID}&lang={language}"
     data = get_paginated_data(url, language)
-    logger.debug("Fetched %d class entries", len(data))
     return {"results": data}
 
 
@@ -54,7 +47,6 @@ def fetch_subject_names(language: str) -> Dict[str, str]:
     url = f"{API_BASE_URL}/assignatures.json?format=json&client_id={CLIENT_ID}&lang={language}"
     subjects = get_paginated_data(url, language)
     names = {item.get("id"): item.get("nom") for item in subjects if item.get("id") and item.get("nom")}
-    logger.debug("Fetched %d subjects", len(names))
     return names
 
 
@@ -240,60 +232,6 @@ def create_schedule_subjects(group_combo: Dict[str, str],
 
 
 # -------------------------
-# Progress Display (for Terminal)
-# -------------------------
-def update_terminal_progress(count: int, total: int) -> None:
-    if not sys.stdout.isatty():
-        return
-    if hasattr(update_terminal_progress, "last_count") and update_terminal_progress.last_count == count:
-        return
-    update_terminal_progress.last_count = count
-
-    now = time.monotonic()
-    if hasattr(update_terminal_progress, "last_time") and count != total:
-        if now - update_terminal_progress.last_time < 0.1:
-            return
-    update_terminal_progress.last_time = now
-
-    if not hasattr(update_terminal_progress, "position_set"):
-        os.system("cls" if os.name == "nt" else "clear")
-    print("\033[?25l", end="", flush=True)
-
-    size = shutil.get_terminal_size()
-    bar_width = min(50, max(size.columns - 10, 10))
-    filled = int(bar_width * count / total) if total else bar_width
-    bar = Text("│", style=TEXT_COLOR) + Text("█" * filled, style=FILLED_BAR_COLOR) + \
-          Text("░" * (bar_width - filled), style=EMPTY_BAR_COLOR) + Text("│", style=TEXT_COLOR)
-    count_text = Text(f"{count}/{total}", style=FILLED_BAR_COLOR)
-
-    if not hasattr(update_terminal_progress, "position_set"):
-        top_padding = max((size.lines - 2) // 2, 0)
-        print("\033[H" + "\n" * top_padding, end="")
-        update_terminal_progress.position_set = True
-    else:
-        print("\033[2A", end="")
-
-    print("\033[2K", end="")  # clear line
-    console.print(bar, justify="center")
-    print("\033[2K", end="")
-    console.print(count_text, justify="center")
-    if count == total:
-        print("\033[?25h", end="", flush=True)
-
-
-def run_progress_thread(progress: Dict[str, Any]) -> None:
-    if not sys.stdout.isatty():
-        return
-    last = -1
-    while not progress["done"]:
-        if progress["count"] != last:
-            update_terminal_progress(progress["count"], progress["total"])
-            last = progress["count"]
-        time.sleep(0.1)
-    update_terminal_progress(progress["total"], progress["total"])
-
-
-# -------------------------
 # Valid Combinations and Merging Schedules
 # -------------------------
 def get_valid_combinations(schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
@@ -303,13 +241,11 @@ def get_valid_combinations(schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
                            start_hour: int,
                            end_hour: int) -> List[Dict[str, str]]:
     available = {s: list(schedule[s].keys()) for s in subjects if s in schedule}
-    logger.debug("Available groups for subjects: %s", available)
     all_combos = [dict(zip(available.keys(), combo)) for combo in itertools.product(*available.values())]
     valid = []
     for combo in all_combos:
         if is_valid_schedule(schedule, combo, blacklist, allowed_languages, start_hour, end_hour):
             valid.append(combo)
-    logger.debug("Valid combinations count: %d", len(valid))
     return valid
 
 
@@ -326,16 +262,10 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
                           ) -> Tuple[List[Dict[str, Any]], List[str]]:
     merged_schedules = []
     urls = []
-    total_iters = max(len(group_combos) * len(subgroup_combos), 1)
-    progress = {"count": 0, "total": total_iters, "done": False}
-    thread = None
-    if show_progress and sys.stdout.isatty():
-        thread = threading.Thread(target=run_progress_thread, args=(progress,), daemon=True)
-        thread.start()
-
+    # Debug UI disabled: progress display removed
     for group_combo in group_combos:
         for subgroup_combo in subgroup_combos:
-            progress["count"] += 1
+            # progress counting removed
             group_slots = get_time_slots(group_schedule, group_combo)
             subgroup_slots = get_time_slots(subgroup_schedule, subgroup_combo)
             if not has_valid_combined_schedule(group_slots, subgroup_slots, max_days, start_hour, end_hour):
@@ -346,9 +276,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
             url = generate_schedule_url(subjects_entry, quadrimester)
             merged_schedules.append({"subjects": subjects_entry, "url": url})
             urls.append(url)
-    if thread:
-        progress["done"] = True
-        thread.join()
+    # End of debugging UI removal
     return merged_schedules, urls
 
 
@@ -383,18 +311,9 @@ def get_schedule_combinations(
     original_end_hour = end_hour
     end_hour -= 1  # adjust inclusive
 
-    logger.debug(
-        "Params: quad=%s, subjects=%s, hours=%d-%d, langs=%s, require_matching=%s, max_days=%d, blacklist=%s, lang_disp=%s",
-        quadrimester, subjects, start_hour, end_hour, languages, require_matching_subgroup, max_days, blacklist, display_language
-    )
     raw_data = fetch_classes_data(quadrimester, display_language)
     parsed_schedule = parse_classes_data(raw_data)
     group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_schedule)
-    for subject in subjects:
-        logger.debug("Subject %s main groups: %s; subgroups: %s",
-                     subject,
-                     list(group_schedule.get(subject, {}).keys()),
-                     list(subgroup_schedule.get(subject, {}).keys()))
     valid_group_combos = get_valid_combinations(group_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     valid_subgroup_combos = get_valid_combinations(subgroup_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     schedules, urls = merge_valid_schedules(valid_group_combos, valid_subgroup_combos,
@@ -414,5 +333,4 @@ def get_schedule_combinations(
         "total": len(schedules),
         "schedules": schedules
     }
-    logger.debug("Found %d valid schedules", len(schedules))
     return result

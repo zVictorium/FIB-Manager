@@ -3,7 +3,6 @@ Command-line interface module for FIB Manager.
 """
 
 import sys
-import logging
 import json
 import msvcrt
 import webbrowser
@@ -55,28 +54,20 @@ def build_argument_parser(default_quad: str) -> ArgumentParser:
     return parser
 
 def add_search_arguments(parser: ArgumentParser, default_quad: str) -> None:
-    parser.add_argument("--debug", action="store_true", help="enable debug output")
-    parser.add_argument("-q", "--quadrimester", default=default_quad, help=f"quadrimester code (e.g., {default_quad})")
+    parser.add_argument("-q", "--quadrimester", default=default_quad, help=f"quadrimester code (e.g., {default_quad}) (default {default_quad})")
     parser.add_argument("-s", "--subjects", nargs="+", required=True, help="list of subject codes")
-    parser.add_argument("--start", type=int, default=8, help="start hour (inclusive)")
-    parser.add_argument("--end", type=int, default=20, help="end hour (exclusive)")
-    parser.add_argument("-l", "--languages", nargs="*", default=[], help="preferred class languages (e.g., en, es, ca)")
-    parser.add_argument("--freedom", action="store_true", help="allow different subgroup than group")
-    parser.add_argument("--days", type=int, default=5, help="maximum number of days with classes")
-    parser.add_argument("--blacklist", nargs="*", default=[], help="blacklisted groups (e.g., IES-10)")
-    parser.add_argument("-v", "--view", action="store_true", help="show search results in interactive interface")
+    parser.add_argument("--start", type=int, default=8, help="start hour (inclusive) (default 8)")
+    parser.add_argument("--end", type=int, default=20, help="end hour (exclusive) (default 20)")
+    parser.add_argument("-l", "--languages", nargs="*", default=[], help="preferred class languages (e.g., en, es, ca) (default [])")
+    parser.add_argument("--freedom", action="store_true", help="allow different subgroup than group (default False)")
+    parser.add_argument("--days", type=int, default=5, help="maximum number of days with classes (default 5)")
+    parser.add_argument("--blacklist", nargs="*", default=[], help="blacklisted groups (e.g., IES-10) (default [])")
+    parser.add_argument("-v", "--view", action="store_true", help="show search results in interactive interface (default False)")
 
 def add_subjects_arguments(parser: ArgumentParser, default_quad: str) -> None:
-    parser.add_argument("-q", "--quadrimester", default=default_quad, help=f"quadrimester code (e.g., {default_quad})")
-    parser.add_argument("-l", "--language", default="en", help="language code for subject names (e.g., en, es, ca)")
-    parser.add_argument("-v", "--view", action="store_true", help="display subjects in interactive interface")
-
-def configure_debug_mode(enabled: bool) -> None:
-    if not enabled:
-        return
-    logging.basicConfig(level=logging.DEBUG)
-    import app.scheduler as sched
-    sched.DEBUG = True
+    parser.add_argument("-q", "--quadrimester", default=default_quad, help=f"quadrimester code (e.g., {default_quad}) (default {default_quad})")
+    parser.add_argument("-l", "--language", default="en", help="language code for subject names (e.g., en, es, ca) (default en)")
+    parser.add_argument("-v", "--view", action="store_true", help="display subjects in interactive interface (default False)")
 
 def print_json(data: dict) -> None:
     formatted = json.dumps(data, indent=2)
@@ -172,11 +163,11 @@ def display_interface_schedule(index: int, total: int, schedules: list[dict], pa
         subj_table = create_subject_info_table(schedule, subject_colors)
         console.print(subj_table, justify="center")
     console.print("\n\n")
-    console.print("SPACE to open schedule URL", style="primary", justify="center")
+    console.print("XSPACE to open schedule URL", style="primary", justify="center")
     toggle_text = "TAB to show groups" if grid_view else "TAB to show schedule"
     console.print(toggle_text, style="primary", justify="center")
     console.print("←→ to navigate", style="warning", justify="center")
-    console.print("Q to quit\nESC to leave", style="accent", justify="center")
+    console.print("ESC to leave\nQ to quit", style="accent", justify="center")
 
 def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: int, end_hour: int) -> None:
     if not schedules:
@@ -292,13 +283,13 @@ def display_subjects_list(quad: str, lang: str) -> None:
     names = fetch_subject_names(lang)
     year, quad_num = quad.split("Q")
     ordinal = "1st" if quad_num == "1" else "2nd" if quad_num == "2" else f"{quad_num}th"
-    table = Table(title=f"Subjects of the {ordinal} quarter of {year}", header_style="bright_red")
+    table = Table(title=f"CSubjects of the {ordinal} quarter of {year}", header_style="bright_red")
     table.add_column("Code", justify="right", style="bright_black", header_style="bold")
     table.add_column("Name", style="white", header_style="bold")
     for subject in sorted(parsed_data.keys()):
         table.add_row(subject, names.get(subject, subject))
     console.print(Align(table, align="center"))
-    console.print(Align(Text("Q to quit\nESC to leave", style="accent", justify="center"), align="center"))
+    console.print(Align(Text("ESC to leave\nQ to quit", style="accent", justify="center"), align="center"))
     while True:
         key = msvcrt.getwch()
         if key == "\x1b":
@@ -318,7 +309,6 @@ def display_subjects_for_selection() -> None:
 
 # --- Command handlers ---
 def handle_search_command(args: Namespace) -> None:
-    configure_debug_mode(args.debug)
     args.languages = normalize_languages(args.languages)
     max_days = args.days
     relax_days = 5 - max_days

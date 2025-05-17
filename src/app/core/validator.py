@@ -250,13 +250,11 @@ def get_valid_combinations(schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
         List of valid schedule combinations
     """
     available = {s: list(schedule[s].keys()) for s in subjects if s in schedule}
-    logger.debug("Available groups for subjects: %s", available)
     all_combos = [dict(zip(available.keys(), combo)) for combo in itertools.product(*available.values())]
     valid = []
     for combo in all_combos:
         if is_valid_schedule(schedule, combo, blacklist, allowed_languages, start_hour, end_hour):
             valid.append(combo)
-    logger.debug("Valid combinations count: %d", len(valid))
     return valid
 
 

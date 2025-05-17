@@ -100,7 +100,7 @@ This launches a fully interactive application where you can:
 ### Searching for schedule combinations
 
 ```bash
-fib-manager schedules --quadrimester 2024Q2 -s IES-101 FIB-202 --start 9 --end 18 -l en es --days 4 --freedom
+fib-manager schedules --quadrimester 2024Q2 -s IES XC --start 9 --end 18 -l en es --days 4 --freedom
 ```
 
 The command will print matching timetable combinations in JSON format.

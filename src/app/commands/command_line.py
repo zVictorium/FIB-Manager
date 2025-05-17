@@ -3,7 +3,6 @@ Main command-line interface for FIB Manager.
 """
 
 import sys
-import logging
 import json
 from argparse import ArgumentParser, Namespace
 
@@ -23,7 +22,6 @@ def add_search_arguments(parser: ArgumentParser, default_quad: str) -> None:
         parser: ArgumentParser object
         default_quad: Default quadrimester code
     """
-    parser.add_argument("--debug", action="store_true", help="enable debug output")
     parser.add_argument("-q", "--quadrimester", default=default_quad, help=f"quadrimester code (e.g., {default_quad})")
     parser.add_argument("-s", "--subjects", nargs="+", required=True, help="list of subject codes")
     parser.add_argument("--start", type=int, default=8, help="start hour (inclusive)")
@@ -48,18 +46,6 @@ def add_subjects_arguments(parser: ArgumentParser, default_quad: str) -> None:
     parser.add_argument("-v", "--view", action="store_true", help="display subjects in interactive interface")
 
 
-def configure_debug_mode(enabled: bool) -> None:
-    """
-    Configure debug mode.
-    """
-    if not enabled:
-        return
-    logging.basicConfig(level=logging.DEBUG)
-    # Enable debug flag in schedule generator
-    import app.core.schedule_generator as gen
-    gen.DEBUG = True
-
-
 def print_json(data: dict) -> None:
     """
     Print data as JSON.
@@ -81,7 +67,6 @@ def handle_search_command(args: Namespace) -> None:
     Args:
         args: ArgumentParser arguments
     """
-    configure_debug_mode(args.debug)
     args.languages = normalize_languages(args.languages)
     max_days = args.days
     relax_days = 5 - max_days
@@ -113,7 +98,12 @@ def handle_subjects_command(args: Namespace) -> None:
     raw_data = fetch_classes_data(args.quadrimester, lang)
     parsed_data = parse_classes_data(raw_data)
     names = fetch_subject_names(lang)
-    subjects_data = {subject: names.get(subject, subject) for subject in sorted(parsed_data.keys())}
+    subjects = {subject: names.get(subject, subject) for subject in sorted(parsed_data.keys())}
+    subjects_data = {
+        "quadrimester": args.quadrimester,
+        "language": lang,
+        "subjects": subjects
+    }
     
     if args.view:
         if not check_windows_interactive():
@@ -175,8 +165,6 @@ def main() -> None:
         default_quad = get_default_quadrimester()
         parser = build_argument_parser(default_quad)
         args = parser.parse_args()
-        
-        print(f"Command: {args.command}")
         
         if args.command == "schedules":
             handle_search_command(args)

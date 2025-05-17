@@ -17,9 +17,6 @@ from app.core.validator import (
 # Initialize module logger
 logger = logging.getLogger(__name__)
 
-# Debug flag
-DEBUG = False
-
 def get_schedule_combinations(
     quadrimester: str,
     subjects: List[str],
@@ -55,19 +52,9 @@ def get_schedule_combinations(
     original_end_hour = end_hour
     end_hour -= 1  # adjust inclusive
 
-    logger.debug(
-        "Params: quad=%s, subjects=%s, hours=%d-%d, langs=%s, require_matching=%s, max_days=%d, blacklist=%s, lang_disp=%s",
-        quadrimester, subjects, start_hour, end_hour, languages, require_matching_subgroup, max_days, blacklist, display_language
-    )
     raw_data = fetch_classes_data(quadrimester, display_language)
     parsed_schedule = parse_classes_data(raw_data)
     group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_schedule)
-    
-    for subject in subjects:
-        logger.debug("Subject %s main groups: %s; subgroups: %s",
-                     subject,
-                     list(group_schedule.get(subject, {}).keys()),
-                     list(subgroup_schedule.get(subject, {}).keys()))
     
     valid_group_combos = get_valid_combinations(group_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     valid_subgroup_combos = get_valid_combinations(subgroup_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
@@ -94,5 +81,4 @@ def get_schedule_combinations(
         "schedules": schedules
     }
     
-    logger.debug("Found %d valid schedules", len(schedules))
     return result

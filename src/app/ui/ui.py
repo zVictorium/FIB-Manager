@@ -93,7 +93,7 @@ def create_schedule_grid(schedule: dict, parsed_classes: dict, start_hour: int, 
         table.add_column(day, justify="center", style="accent", header_style="bold")
     
     for hour in range(start_hour, end_hour):
-        row = [str(hour)]
+        row = [f"{hour} - {hour + 1}"]
         for day_index in range(len(WEEKDAYS)):
             entries = grid.get((day_index + 1, hour), [])
             cell = Text()
@@ -165,7 +165,7 @@ def display_interface_schedule(index: int, total: int, schedules: list[dict], pa
     header = Text("Schedule ", style="white") + Text(f"{index+1}", style="#FF5555") + \
              Text("/", style="bright_black") + Text(f"{total}", style="#FF5555")
     console.rule(header, style="accent")
-    console.print("\n\n")
+    console.print()
     
     if grid_view:
         grid_table = create_schedule_grid(schedule, parsed_classes, start_hour, end_hour, subject_colors)
@@ -173,13 +173,13 @@ def display_interface_schedule(index: int, total: int, schedules: list[dict], pa
     else:
         subj_table = create_subject_info_table(schedule, subject_colors)
         console.print(subj_table, justify="center")
+        console.print()
     
-    console.print("\n\n")
     console.print("SPACE to open schedule URL", style="primary", justify="center")
     toggle_text = "TAB to show groups" if grid_view else "TAB to show schedule"
     console.print(toggle_text, style="primary", justify="center")
     console.print("←→ to navigate", style="warning", justify="center")
-    console.print("Q to quit\nESC to leave", style="accent", justify="center")
+    console.print("ESC to leave\nQ to quit", style="accent", justify="center")
 
 
 def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: int, end_hour: int) -> None:
@@ -259,9 +259,15 @@ def display_subjects_list(quad: str, lang: str) -> None:
     parsed_data = parse_classes_data(raw_data)
     names = fetch_subject_names(lang)
     
+    total = len(parsed_data)
+
+    header = Text("Subjects ", style="white") + Text(f"{total}", style="#FF5555")
+    console.rule(header, style="accent")
+    console.print()
+
     year, quad_num = quad.split("Q")
     ordinal = "1st" if quad_num == "1" else "2nd" if quad_num == "2" else f"{quad_num}th"
-    
+
     table = Table(title=f"Subjects of the {ordinal} quarter of {year}", header_style="bright_red")
     table.add_column("Code", justify="right", style="bright_black", header_style="bold")
     table.add_column("Name", style="white", header_style="bold")
@@ -270,7 +276,7 @@ def display_subjects_list(quad: str, lang: str) -> None:
         table.add_row(subject, names.get(subject, subject))
     
     console.print(Align(table, align="center"))
-    console.print(Align(Text("Q to quit\nESC to leave", style="accent", justify="center"), align="center"))
+    console.print(Align(Text("\nESC to leave\nQ to quit", style="accent", justify="center"), align="center"))
     
     while True:
         key = msvcrt.getwch()

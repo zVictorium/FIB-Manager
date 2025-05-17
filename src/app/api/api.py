@@ -23,7 +23,6 @@ def get_json_response(url: str, language: str) -> Dict[str, Any]:
         Dictionary containing the JSON response
     """
     headers = {"Accept-Language": language}
-    logger.debug("Requesting data: %s", url)
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         logger.error("Failed to fetch data: HTTP %s", response.status_code)
@@ -64,7 +63,6 @@ def fetch_classes_data(quadrimester: str, language: str) -> Dict[str, List[Dict[
     """
     url = f"{API_BASE_URL}/quadrimestres/{quadrimester}/classes.json?client_id={CLIENT_ID}&lang={language}"
     data = get_paginated_data(url, language)
-    logger.debug("Fetched %d class entries", len(data))
     return {"results": data}
 
 
@@ -81,7 +79,6 @@ def fetch_subject_names(language: str) -> Dict[str, str]:
     url = f"{API_BASE_URL}/assignatures.json?format=json&client_id={CLIENT_ID}&lang={language}"
     subjects = get_paginated_data(url, language)
     names = {item.get("id"): item.get("nom") for item in subjects if item.get("id") and item.get("nom")}
-    logger.debug("Fetched %d subjects", len(names))
     return names
 
 
