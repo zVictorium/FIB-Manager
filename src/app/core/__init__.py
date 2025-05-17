@@ -1,0 +1,1 @@
+"""FIB Manager core subpackage."""

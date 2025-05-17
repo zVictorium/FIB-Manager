@@ -1,112 +1,54 @@
-import sys, os, json, logging, atexit, webbrowser
+"""
+Command-line interface module for FIB Manager.
+"""
+
+import sys
+import logging
+import json
+import msvcrt
+import webbrowser
 from datetime import date
-from argparse import ArgumentParser, Namespace
-
-try:
-    import msvcrt
-except ImportError:
-    msvcrt = None
-
+import questionary
+from pyfiglet import figlet_format
 from rich.console import Console
 from rich.table import Table
-from rich import box
-from rich.theme import Theme
 from rich.text import Text
+from rich import box
 from rich.align import Align
-from pyfiglet import figlet_format
-import questionary
-from questionary import Style as QStyle
+from argparse import ArgumentParser, Namespace
 
-from app.scheduler import (
-    get_schedule_combinations,
-    fetch_classes_data,
-    parse_classes_data,
-    fetch_subject_names,
-)
+from app.core.utils import get_default_quadrimester, normalize_languages, normalize_language, parse_blacklist, show_cursor, clear_screen, hide_cursor
+from app.commands.search import perform_schedule_search, print_json
+from app.ui.ui import check_windows_interactive, display_subjects_list, navigate_schedules, QUESTIONARY_STYLE
+from app.ui.interactive import run_interactive_app
+from app.api import fetch_classes_data, fetch_subject_names
+from app.core.parser import parse_classes_data
+from app.core.schedule_generator import get_schedule_combinations
+from app.core.constants import WEEKDAYS, LANG_FLAGS, SUBJECT_COLORS
 
-# Constants
-LANGUAGE_MAP = {
-    "catala": "ca", "català": "ca", "catalan": "ca", "ca": "ca",
-    "castella": "es", "castellà": "es", "castellano": "es",
-    "espanol": "es", "español": "es", "spanish": "es", "es": "es",
-    "english": "en", "anglés": "en", "angles": "en",
-    "inglés": "en", "ingles": "en", "en": "en",
-}
-
-LANG_FLAGS = {"en": "ENG", "es": "ESP", "ca": "CAT"}
-
-UI_THEME = Theme({
-    "primary": "white",
-    "secondary": "bright_black",
-    "accent": "red",
-    "warning": "bold red",
-    "error": "bold red",
-})
-
-QUESTIONARY_STYLE = QStyle([
-    ("qmark", "fg:#FF5555 bold"),
-    ("question", "fg:#FFFFFF"),
-    ("answer", "fg:#AAAAAA"),
-    ("pointer", "fg:#666666 bold"),
-    ("highlighted", "fg:#FF5555 bold"),
-    ("selected", "fg:#AAAAAA"),
-    ("separator", "fg:#AAAAAA"),
-    ("instruction", "fg:#AAAAAA"),
-    ("text", "fg:#AAAAAA"),
-])
-
-WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-SUBJECT_COLORS = [
-    "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", 
-    "#BAE1FF", "#FFECB3", "#D7BDE2", "#AED6F1",
-]
-
-console = Console(theme=UI_THEME)
-
-def show_cursor() -> None:
-    if sys.stdout.isatty():
-        print("\033[?25h", end="", flush=True)
-
-# Ensure terminal cursor gets restored
-atexit.register(lambda: show_cursor() if sys.stdout.isatty() else None)
-
-def hide_cursor() -> None:
-    if sys.stdout.isatty():
-        print("\033[?25l", end="", flush=True)
-
-def clear_screen() -> None:
-    os.system("cls" if os.name == "nt" else "clear")
-
-def get_default_quadrimester() -> str:
-    today = date.today()
-    half = 1 if today.month <= 6 else 2
-    return f"{today.year-1}Q{half+1}"
-
-def normalize_language(lang: str) -> str:
-    return LANGUAGE_MAP.get(lang.lower(), lang)
-
-def normalize_languages(langs: list[str]) -> list[str]:
-    return [normalize_language(l) for l in langs]
-
-def parse_blacklist(blacklist_items: list[str]) -> list[list[str, int]]:
-    parsed = []
-    for item in blacklist_items:
-        if "-" not in item:
-            continue
-        subject, group = item.split("-", 1)
-        if not group.isdigit():
-            continue
-        parsed.append([subject.upper(), int(group)])
-    return parsed
+console = Console()
 
 def build_argument_parser(default_quad: str) -> ArgumentParser:
+    """
+    Build the argument parser for the command-line interface.
+    
+    Args:
+        default_quad: Default quadrimester code
+    
+    Returns:
+        ArgumentParser object
+    """
     parser = ArgumentParser(prog="fib-manager")
     subparsers = parser.add_subparsers(dest="command")
+    
+    # Interactive application command
     subparsers.add_parser("app", help="start interactive application")
     
+    # Schedule search command
     schedules_parser = subparsers.add_parser("schedules", help="search schedule combinations")
     add_search_arguments(schedules_parser, default_quad)
     
+    # Subjects list command
     subjects_parser = subparsers.add_parser("subjects", help="show subjects for a quadrimester")
     add_subjects_arguments(subjects_parser, default_quad)
     
@@ -315,7 +257,7 @@ def select_search_params() -> tuple:
                                       instruction="(Use ↑↓ and Enter)", style=QUESTIONARY_STYLE,
                                       use_jk_keys=False, use_search_filter=True).ask())
     days = int(questionary.select("Maximum days with classes:", choices=[str(i) for i in range(1, 6)],
-                                        default=5, instruction="(Use ↑↓ and Enter)", style=QUESTIONARY_STYLE,
+                                        default="5", instruction="(Use ↑↓ and Enter)", style=QUESTIONARY_STYLE,
                                         use_jk_keys=False, use_search_filter=True).ask())
     relax_days = 5 - days
     freedom = questionary.select("Allow different subgroup than group?",

@@ -1,4 +1,4 @@
-# Schedule Searcher CLI
+# FIB Manager CLI
 
 A command-line tool to search and generate valid class schedules for FIB degrees using the UPC public API.
 

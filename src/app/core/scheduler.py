@@ -1,29 +1,23 @@
-import requests
+"""
+Module for generating valid class schedules.
+"""
+
 import itertools
 import logging
-import os
-import shutil
-import threading
-import time
 import sys
+import threading
 from typing import Any, Dict, List, Tuple, Set
-from rich.console import Console
-from rich.text import Text
+
+from app.core.constants import LANGUAGE_MAPPING, DEFAULT_LANGUAGE
+from app.api import fetch_classes_data, generate_schedule_url
+from app.core.parser import parse_classes_data, split_schedule_by_group_type
+from app.core.utils import run_progress_thread
 
 # Initialize module logger
 logger = logging.getLogger(__name__)
 
-API_BASE_URL = "https://api.fib.upc.edu/v2"
-CLIENT_ID = "77qvbbQqni4TcEUsWvUCKOG1XU7Hr0EfIs4pacRz"
-LANGUAGE_MAPPING = {"en": "en", "es": "es", "ca": "ca", "": "en"}
-DEFAULT_LANGUAGE = "ca"
-
-console = Console()
-
-# UI Theme colors
-FILLED_BAR_COLOR = "#FF5555 bold"  # accent/highlighted color
-EMPTY_BAR_COLOR = "#666666 bold"   # secondary color
-TEXT_COLOR = "#666666 bold"        # primary color
+# Debug flag
+DEBUG = False
 
 
 # -------------------------
