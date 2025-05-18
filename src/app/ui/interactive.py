@@ -220,7 +220,6 @@ def run_interactive_app() -> None:
     import traceback
     
     try:
-        print("Displaying splash screen...")
         display_splash_screen()
         
         while True:

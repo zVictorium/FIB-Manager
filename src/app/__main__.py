@@ -2,7 +2,6 @@ import sys
 import traceback
 
 try:
-    print("Starting FIB Manager...")
     from .commands.command_line import main
     main()
 except Exception as e:
