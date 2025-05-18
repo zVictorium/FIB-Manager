@@ -175,10 +175,8 @@ def main() -> None:
             handle_app_command(args)
         else:
             parser.print_help()
-    except Exception as e:
-        import traceback
-        print(f"Error in main function: {e}")
-        traceback.print_exc()
+    except:
+        pass
 
 
 if __name__ == "__main__":

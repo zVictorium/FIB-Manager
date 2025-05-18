@@ -17,5 +17,3 @@ call ..\\.venv\Scripts\activate || (
 
 REM run the CLI app
 fib-manager app %*
-
-pause

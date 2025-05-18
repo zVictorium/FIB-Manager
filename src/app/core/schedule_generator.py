@@ -2,20 +2,15 @@
 Scheduler module that uses other modules to generate valid schedules.
 """
 
-import logging
 from typing import Dict, List, Any
 
 from app.core.constants import LANGUAGE_MAPPING, DEFAULT_LANGUAGE
 from app.api import fetch_classes_data
 from app.core.parser import parse_classes_data, split_schedule_by_group_type
-from app.core.utils import run_progress_thread
 from app.core.validator import (
     get_valid_combinations,
     merge_valid_schedules
 )
-
-# Initialize module logger
-logger = logging.getLogger(__name__)
 
 def get_schedule_combinations(
     quadrimester: str,
