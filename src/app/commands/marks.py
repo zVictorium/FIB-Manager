@@ -9,8 +9,11 @@ import re
 import json
 import argparse
 import logging
+import sys
 from argparse import Namespace
 from typing import Dict, List, Set, Tuple, Any, Optional, Union, Callable
+
+from app.ui.ui import display_marks_results, check_windows_interactive
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -34,6 +37,8 @@ def add_marks_arguments(parser: argparse.ArgumentParser) -> None:
                         help="Target result value for the formula")
     parser.add_argument("--values", type=str, nargs="+", required=False,
                         help="Known variable values in format VAR=VALUE")
+    parser.add_argument("-v", "--view", action="store_true",
+                        help="Display results in an interactive table view")
 
 
 def handle_marks_command(args: Namespace) -> None:
@@ -62,11 +67,16 @@ def handle_marks_command(args: Namespace) -> None:
         target = problem["target"]
         
         # Find the solution
-        solution = solve_for_missing_variables(formula, values, target)
+        values, result, solution = process_marks_calculation(formula, values, target)
         
         # Format and output results
-        results = format_results(formula, values, target, solution)
-        print(json.dumps(results, indent=2))  # Always use pretty formatting
+        if args.view:
+            if not check_windows_interactive():
+                return
+            display_marks_results(formula, values, target, solution, result)
+        else:
+            results = format_results(formula, values, target, solution)
+            print(json.dumps(results, indent=2))  # Always use pretty formatting
         
     except Exception as e:
         logger.error(f"Error processing formula: {str(e)}")
@@ -428,3 +438,32 @@ def format_results(formula: str, values: Dict[str, float], target: float, soluti
         "result": round(baseline, 2),
         "solution": {var: round(val, 2) for var, val in solution.items()}
     }
+
+
+def process_marks_calculation(formula: str, 
+                           values: Dict[str, float], 
+                           target: float) -> Tuple[Dict[str, float], float, Dict[str, float]]:
+    """
+    Process a marks calculation request.
+    
+    This is a utility function that centralizes the calculation logic for both
+    the CLI and interactive interfaces, following the DRY principle.
+    
+    Args:
+        formula: Mathematical expression
+        values: Dictionary of known variable values
+        target: Target result value
+        
+    Returns:
+        Tuple of (values, result, solution)
+    """
+    # Find missing variables
+    missing_vars = get_missing_variables(formula, values)
+    
+    # Calculate current result with known values
+    result = calculate_baseline_result(formula, values, missing_vars)
+    
+    # Calculate solution
+    solution = solve_for_missing_variables(formula, values, target)
+    
+    return values, result, solution

@@ -287,3 +287,71 @@ def display_subjects_list(quad: str, lang: str) -> None:
         elif key.lower() == "q":
             show_cursor()
             sys.exit(0)
+
+
+def display_marks_results(formula: str, values: dict, target: float, solution: dict, result: float) -> None:
+    """
+    Display marks calculation results in a table format.
+    
+    Args:
+        formula: The formula used for calculation
+        values: Dictionary of known variable values
+        target: Target result value
+        solution: Dictionary of calculated missing variable values
+        result: Current result with known values
+    """
+    clear_screen()
+    hide_cursor()
+    
+    header = Text("Marks Calculator", style="accent")
+    console.rule(header, style="accent")
+    console.print()
+    
+    # Formula and target table
+    formula_table = Table(title="Formula Information", header_style="secondary")
+    formula_table.add_column("Formula", style="white", header_style="bold")
+    formula_table.add_column("Target", justify="right", style="white", header_style="bold")
+    formula_table.add_column("Current Result", justify="right", style="white", header_style="bold")
+    formula_table.add_row(
+        formula,
+        str(round(target, 2)),
+        str(round(result, 2))
+    )
+    console.print(formula_table, justify="center")
+    console.print()
+    
+    # Known values table
+    if values:
+        known_table = Table(title="Known Variables", header_style="secondary")
+        known_table.add_column("Variable", style="white", header_style="bold")
+        known_table.add_column("Value", justify="right", style="white", header_style="bold")
+        
+        for var, val in sorted(values.items()):
+            known_table.add_row(var, str(round(val, 2)))
+        
+        console.print(known_table, justify="center")
+        console.print()
+    
+    # Solution table
+    if solution:
+        solution_table = Table(title="Calculated Variables", header_style="secondary")
+        solution_table.add_column("Variable", style="white", header_style="bold")
+        solution_table.add_column("Value", justify="right", style="accent", header_style="bold")
+        
+        for var, val in sorted(solution.items()):
+            solution_table.add_row(var, str(round(val, 2)))
+        
+        console.print(solution_table, justify="center")
+        console.print()
+    
+    console.print("\nESC to leave\nQ to quit", style="accent", justify="center")
+    
+    while True:
+        key = msvcrt.getwch()
+        if key == "\x1b":
+            show_cursor()
+            clear_screen()
+            break
+        elif key.lower() == "q":
+            show_cursor()
+            sys.exit(0)

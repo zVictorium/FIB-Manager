@@ -214,6 +214,81 @@ def perform_app_search() -> None:
         navigate_schedules(schedules, parsed_data, start_hour, end_hour)
 
 
+def perform_marks_calculation() -> None:
+    """Perform a marks calculation from the app interface."""
+    from app.commands.marks import (
+        find_variable_names, 
+        get_missing_variables, 
+        solve_for_missing_variables, 
+        calculate_baseline_result,
+        process_marks_calculation
+    )
+    from app.ui.ui import display_marks_results, check_windows_interactive
+    
+    # Early return if not in interactive mode
+    if not check_windows_interactive():
+        return
+    
+    clear_screen()
+    
+    try:
+        # Get formula from user
+        formula = questionary.text(
+            "Enter formula (e.g., EX1 * 0.4 + EX2 * 0.6):",
+            instruction="Use variable names for marks",
+            style=QUESTIONARY_STYLE,
+            validate=lambda text: bool(text.strip())
+        ).ask()
+        
+        if not formula:
+            return
+        
+        # Get target mark
+        target_text = questionary.text(
+            "Enter target mark (e.g., 5.0):",
+            instruction="The minimum mark you want to achieve",
+            style=QUESTIONARY_STYLE,
+            validate=lambda text: text.replace('.', '', 1).isdigit() and 0 <= float(text) <= 10
+        ).ask()
+        
+        if not target_text:
+            return
+        
+        target = float(target_text)
+          # Find variables in formula
+        variables = find_variable_names(formula)
+        
+        # Get known variable values from user
+        values = {}
+        for var in variables:
+            known = questionary.confirm(
+                f"Do you know the value for {var}?",
+                style=QUESTIONARY_STYLE
+            ).ask()
+            
+            if known:
+                var_value = questionary.text(
+                    f"Enter value for {var}:",
+                    instruction="Enter a number from 0 to 10",
+                    style=QUESTIONARY_STYLE,
+                    validate=lambda text: text.replace('.', '', 1).isdigit() and 0 <= float(text) <= 10
+                ).ask()
+                
+                if var_value:
+                    values[var] = float(var_value)
+        
+        # Process the calculation using the shared helper function
+        values, result, solution = process_marks_calculation(formula, values, target)
+        
+        # Display results
+        display_marks_results(formula, values, target, solution, result)
+    except Exception as e:
+        console.print(f"Error in marks calculation: {str(e)}", style="error", justify="center")
+        import traceback
+        traceback.print_exc()
+        input("Press Enter to continue...")
+
+
 def run_interactive_app() -> None:
     """Run the interactive application."""
     import sys
@@ -227,7 +302,7 @@ def run_interactive_app() -> None:
                 clear_screen()
                 option = questionary.select(
                     "Select option:", 
-                    choices=["Search schedules", "List subjects", "Quit"],
+                    choices=["Search schedules", "List subjects", "Calculate marks", "Quit"],
                     instruction="(Use ↑↓ and Enter)", 
                     style=QUESTIONARY_STYLE,
                     use_jk_keys=False, 
@@ -242,6 +317,8 @@ def run_interactive_app() -> None:
                     display_subjects_for_selection()
                 elif option == "Search schedules":
                     perform_app_search()
+                elif option == "Calculate marks":
+                    perform_marks_calculation()
             except Exception as e:
                 print(f"Error in interactive menu: {e}")
                 traceback.print_exc()
