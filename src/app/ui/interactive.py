@@ -217,7 +217,7 @@ def perform_app_search() -> None:
     
     quad, subjects, start_hour, end_hour, languages, blacklisted, same_subgroup, relax_days, max_dead_hours = select_search_params()
     clear_screen()
-    result, parsed_data = perform_schedule_search(
+    result, parsed_data, group_schedule, subgroup_schedule = perform_schedule_search(
         quad, subjects, start_hour, end_hour, languages,
         same_subgroup, relax_days, blacklisted, max_dead_hours, True
     )
@@ -226,7 +226,7 @@ def perform_app_search() -> None:
     if not schedules:
         console.print("No schedules found.", style="error", justify="center")
     else:
-        navigate_schedules(schedules, parsed_data, start_hour, end_hour)
+        navigate_schedules(schedules, parsed_data, start_hour, end_hour, group_schedule, subgroup_schedule)
 
 
 def perform_marks_calculation() -> None:

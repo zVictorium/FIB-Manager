@@ -17,9 +17,10 @@ from rich import box
 import questionary
 from questionary import Style as QStyle
 
-from app.core.constants import WEEKDAYS, LANG_FLAGS, SUBJECT_COLORS
+from app.core.constants import WEEKDAYS, LANG_FLAGS, SUBJECT_COLORS, SORT_MODE_GROUPS, SORT_MODE_DEAD_HOURS
 from app.core.utils import clear_screen, hide_cursor, show_cursor, normalize_language, is_interactive_mode
 from app.core.parser import parse_classes_data
+from app.core.validator import sort_schedules_by_mode
 
 # Setup console and theme
 UI_THEME = Theme({
@@ -182,7 +183,60 @@ def display_interface_schedule(index: int, total: int, schedules: list[dict], pa
     console.print("ESC to leave\nQ to quit", style="accent", justify="center")
 
 
-def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: int, end_hour: int) -> None:
+def display_interface_schedule_with_sort(index: int, total: int, schedules: list[dict], parsed_classes: dict,
+                                         start_hour: int, end_hour: int, subject_colors: dict, grid_view: bool, 
+                                         sort_mode: str) -> None:
+    """
+    Display a schedule in the interface with sorting information.
+    
+    Args:
+        index: Index of the schedule to display
+        total: Total number of schedules
+        schedules: List of schedules
+        parsed_classes: Parsed class data
+        start_hour: Minimum hour to display
+        end_hour: Maximum hour to display
+        subject_colors: Dictionary mapping subjects to colors
+        grid_view: Whether to display the schedule as a grid
+        sort_mode: Current sorting mode
+    """
+    clear_screen()
+    hide_cursor()
+    schedule = schedules[index]
+    
+    if not schedule.get("subjects"):
+        console.print("No sessions available for this schedule.", style="warning", justify="center")
+        return    # Create simple header
+    header = Text("Schedule ", style="white") + Text(f"{index+1}", style="#FF5555") + \
+             Text("/", style="bright_black") + Text(f"{total}", style="#FF5555")
+    
+    console.rule(header, style="accent")
+    console.print()
+    
+    if grid_view:
+        grid_table = create_schedule_grid(schedule, parsed_classes, start_hour, end_hour, subject_colors)
+        console.print(grid_table, justify="center")
+    else:
+        subj_table = create_subject_info_table(schedule, subject_colors)
+        console.print(subj_table, justify="center")
+        console.print()
+    console.print("SPACE to open schedule URL", style="primary", justify="center")
+    toggle_text = "TAB to show groups" if grid_view else "TAB to show schedule"
+    console.print(toggle_text, style="primary", justify="center")
+    
+    # Add sort toggle information (showing the opposite mode that will be activated)
+    if sort_mode == SORT_MODE_GROUPS:
+        sort_text = "S to sort by dead hours"
+    else:  # SORT_MODE_DEAD_HOURS
+        sort_text = "S to sort by groups"
+    
+    console.print(sort_text, style="primary", justify="center")
+    console.print("←→ to navigate", style="warning", justify="center")
+    console.print("ESC to leave\nQ to quit", style="accent", justify="center")
+
+
+def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: int, end_hour: int, 
+                      group_schedule: dict = None, subgroup_schedule: dict = None) -> None:
     """
     Allow the user to navigate between schedules.
     
@@ -191,32 +245,48 @@ def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: 
         parsed_classes: Parsed class data
         start_hour: Minimum hour to display
         end_hour: Maximum hour to display
+        group_schedule: Optional group schedule data for sorting
+        subgroup_schedule: Optional subgroup schedule data for sorting
     """
     if not schedules:
         console.print("No schedules found.", style="error", justify="center")
         clear_screen()
         return
     
-    total = len(schedules)
+    # Initialize state variables
+    current_schedules = schedules[:]  # Make a copy to avoid modifying original
+    current_sort_mode = SORT_MODE_GROUPS  # Default sort mode
+    total = len(current_schedules)
     current_index = 0
     grid_view = True
     subject_colors = {subject: SUBJECT_COLORS[i % len(SUBJECT_COLORS)] 
-                      for i, subject in enumerate(sorted({s for sched in schedules for s in sched.get("subjects", {})}))}
+                      for i, subject in enumerate(sorted({s for sched in current_schedules for s in sched.get("subjects", {})}))}
     
-    display_interface_schedule(current_index, total, schedules, parsed_classes, start_hour, end_hour, subject_colors, grid_view)
+    display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
+                                       start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
     
     while is_interactive_mode():
         key = msvcrt.getwch()
         if key == " ":
-            webbrowser.open(schedules[current_index]["url"])
+            webbrowser.open(current_schedules[current_index]["url"])
         elif key == "\t":
             grid_view = not grid_view
-            display_interface_schedule(current_index, total, schedules, parsed_classes, start_hour, end_hour, subject_colors, grid_view)
+            display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
+                                                start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
+        elif key.lower() == "s":
+            # Toggle sort mode
+            current_sort_mode = SORT_MODE_DEAD_HOURS if current_sort_mode == SORT_MODE_GROUPS else SORT_MODE_GROUPS
+            # Re-sort schedules
+            current_schedules = sort_schedules_by_mode(schedules[:], current_sort_mode, group_schedule, subgroup_schedule)
+            current_index = 0  # Reset to first schedule after sorting
+            display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
+                                                start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
         elif key == "\xe0":
             code = msvcrt.getwch()
             if code in ("M", "K"):
                 current_index = (current_index + 1 if code == "M" else current_index - 1) % total
-                display_interface_schedule(current_index, total, schedules, parsed_classes, start_hour, end_hour, subject_colors, grid_view)
+                display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
+                                                   start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
         elif key.lower() == "q":
             show_cursor()
             sys.exit(0)

@@ -33,3 +33,7 @@ SUBJECT_COLORS = [
 
 # Day names for display
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+# Sort modes
+SORT_MODE_GROUPS = "groups"
+SORT_MODE_DEAD_HOURS = "dead_hours"

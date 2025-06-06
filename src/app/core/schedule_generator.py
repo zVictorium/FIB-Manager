@@ -4,12 +4,13 @@ Scheduler module that uses other modules to generate valid schedules.
 
 from typing import Dict, List, Any
 
-from app.core.constants import LANGUAGE_MAPPING, DEFAULT_LANGUAGE
+from app.core.constants import LANGUAGE_MAPPING, DEFAULT_LANGUAGE, SORT_MODE_GROUPS, SORT_MODE_DEAD_HOURS
 from app.api import fetch_classes_data
 from app.core.parser import parse_classes_data, split_schedule_by_group_type
 from app.core.validator import (
     get_valid_combinations,
-    merge_valid_schedules
+    merge_valid_schedules,
+    sort_schedules_by_mode
 )
 
 def get_schedule_combinations(
@@ -23,6 +24,7 @@ def get_schedule_combinations(
     blacklist: List[List[Any]],
     max_dead_hours: int = -1,
     show_progress: bool = False,
+    sort_mode: str = SORT_MODE_GROUPS,
 ) -> Dict[str, Any]:
     """
     Get valid schedule combinations.
@@ -38,6 +40,7 @@ def get_schedule_combinations(
         blacklist: List of [subject, group] pairs
         max_dead_hours: Maximum allowed dead hours (-1 for no limit)
         show_progress: Whether to show a progress bar
+        sort_mode: Sort mode for schedules ("groups" or "dead_hours")
     
     Returns:
         Dictionary containing the schedule combinations
@@ -54,7 +57,6 @@ def get_schedule_combinations(
     group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_schedule)
     valid_group_combos = get_valid_combinations(group_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     valid_subgroup_combos = get_valid_combinations(subgroup_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
-    
     schedules, urls = merge_valid_schedules(
         valid_group_combos, valid_subgroup_combos,
         group_schedule, subgroup_schedule,
@@ -62,6 +64,9 @@ def get_schedule_combinations(
         require_matching_subgroup, quadrimester,
         max_dead_hours, show_progress
     )
+    
+    # Sort schedules based on the specified mode
+    schedules = sort_schedules_by_mode(schedules, sort_mode, group_schedule, subgroup_schedule)
     
     natural_languages = [{"en": "English", "es": "Spanish", "ca": "Catalan"}.get(lang.lower(), lang)
                          for lang in languages]

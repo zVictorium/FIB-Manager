@@ -382,3 +382,98 @@ def has_excessive_dead_hours(group_slots: Dict[Tuple[int, int], List[str]],
     # Count dead hours in the combined schedule
     dead_hours = count_dead_hours(all_slots)
     return dead_hours > max_dead_hours
+
+
+def calculate_schedule_dead_hours(schedule_subjects: Dict[str, Dict[str, int]],
+                                  group_schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
+                                  subgroup_schedule: Dict[str, Dict[str, List[Dict[str, Any]]]]) -> int:
+    """
+    Calculate the total dead hours for a specific schedule.
+    
+    Args:
+        schedule_subjects: Dictionary mapping subject codes to group information
+        group_schedule: Dictionary containing parsed class data for groups
+        subgroup_schedule: Dictionary containing parsed class data for subgroups
+    
+    Returns:
+        Total number of dead hours in the schedule
+    """
+    all_slots = {}
+    
+    # Add group slots
+    for subject, info in schedule_subjects.items():
+        group = str(info.get("group", ""))
+        if group and subject in group_schedule and group in group_schedule[subject]:
+            for entry in group_schedule[subject][group]:
+                slot = (entry["day"], entry["hour"])
+                all_slots.setdefault(slot, []).append(subject)
+    
+    # Add subgroup slots
+    for subject, info in schedule_subjects.items():
+        subgroup = str(info.get("subgroup", ""))
+        if subgroup and subject in subgroup_schedule and subgroup in subgroup_schedule[subject]:
+            for entry in subgroup_schedule[subject][subgroup]:
+                slot = (entry["day"], entry["hour"])
+                all_slots.setdefault(slot, []).append(subject)
+    
+    return count_dead_hours(all_slots)
+
+
+def calculate_schedule_group_sum(schedule_subjects: Dict[str, Dict[str, int]]) -> int:
+    """
+    Calculate the sum of all group numbers in a schedule.
+    
+    Args:
+        schedule_subjects: Dictionary mapping subject codes to group information
+    
+    Returns:
+        Sum of all group numbers (lower sums indicate lower-numbered groups)
+    """
+    total_sum = 0
+    for subject, info in schedule_subjects.items():
+        if info.get("group"):
+            total_sum += info["group"]
+        if info.get("subgroup"):
+            total_sum += info["subgroup"]
+    return total_sum
+
+
+def sort_schedules_by_mode(schedules: List[Dict[str, Any]], 
+                          sort_mode: str,
+                          group_schedule: Dict[str, Dict[str, List[Dict[str, Any]]]] = None,
+                          subgroup_schedule: Dict[str, Dict[str, List[Dict[str, Any]]]] = None) -> List[Dict[str, Any]]:
+    """
+    Sort schedules based on the specified mode.
+    
+    Args:
+        schedules: List of schedules to sort
+        sort_mode: Sorting mode - "groups" or "dead_hours"
+        group_schedule: Dictionary containing parsed class data for groups (required for dead_hours sort)
+        subgroup_schedule: Dictionary containing parsed class data for subgroups (required for dead_hours sort)
+    
+    Returns:
+        Sorted list of schedules
+    """
+    if sort_mode == "dead_hours":
+        if not group_schedule or not subgroup_schedule:
+            return schedules  # Can't sort without schedule data
+          # Calculate dead hours for each schedule and add to schedule data
+        for schedule in schedules:
+            dead_hours = calculate_schedule_dead_hours(
+                schedule.get("subjects", {}), group_schedule, subgroup_schedule
+            )
+            schedule["dead_hours"] = dead_hours
+        
+        # Sort by dead hours (ascending - fewer dead hours first)
+        return sorted(schedules, key=lambda x: x.get("dead_hours", 0))
+    
+    elif sort_mode == "groups":
+        # Calculate group sum for each schedule and add to schedule data
+        for schedule in schedules:
+            group_sum = calculate_schedule_group_sum(schedule.get("subjects", {}))
+            schedule["group_sum"] = group_sum
+        
+        # Sort by group sum (ascending - lower group numbers first)
+        return sorted(schedules, key=lambda x: x.get("group_sum", 0))
+    
+    return schedules

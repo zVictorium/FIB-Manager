@@ -7,6 +7,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 
 from app.core.utils import normalize_languages, parse_blacklist
+from app.core.constants import SORT_MODE_GROUPS, SORT_MODE_DEAD_HOURS
 from app.api import fetch_classes_data
 from app.core.parser import parse_classes_data
 from app.core.schedule_generator import get_schedule_combinations
@@ -35,10 +36,12 @@ def add_search_arguments(parser: ArgumentParser, default_quad: str) -> None:
                         help="allow different subgroup than group")
     parser.add_argument("--days", type=int, default=5, 
                         help="maximum number of days with classes")
-    parser.add_argument("--blacklist", nargs="*", default=[], 
+    parser.add_argument("--blacklist", nargs="*", default=[],
                         help="blacklisted groups (e.g., IES-10)")
     parser.add_argument("--max-dead-hours", type=int, default=-1,
                         help="maximum number of dead hours allowed (-1 for no limit)")
+    parser.add_argument("--sort", choices=["groups", "dead_hours"], default="groups",
+                        help="sort schedules by number of groups or dead hours (default: groups)")
     parser.add_argument("-v", "--view", action="store_true", 
                         help="show search results in interactive interface")
 
@@ -71,9 +74,8 @@ def handle_search_command(args: Namespace) -> None:
     freedom = args.freedom
     same_subgroup = not freedom
     max_dead_hours = args.max_dead_hours
-    
-    # Perform the schedule search
-    result, classes = perform_schedule_search(
+      # Perform the schedule search
+    result, classes, group_schedule, subgroup_schedule = perform_schedule_search(
         args.quadrimester, args.subjects, args.start, args.end,
         normalized_languages, same_subgroup, relax_days,
         args.blacklist, max_dead_hours, args.view
@@ -83,7 +85,8 @@ def handle_search_command(args: Namespace) -> None:
     if args.view:
         if not check_windows_interactive():
             return
-        navigate_schedules(result.get("schedules", []), classes, args.start, args.end)
+        navigate_schedules(result.get("schedules", []), classes, args.start, args.end, 
+                          group_schedule, subgroup_schedule)
     else:
         print_json(result)
 
@@ -116,7 +119,7 @@ def perform_schedule_search(
         show_interface: Whether to show an interface
     
     Returns:
-        Tuple of (search_result, parsed_data)
+        Tuple of (search_result, parsed_data, group_schedule, subgroup_schedule)
     """
     # Normalize input data
     normalized_subjects = [s.upper() for s in subjects]
@@ -126,10 +129,14 @@ def perform_schedule_search(
     raw_data = fetch_classes_data(quad, "en")
     parsed_data = parse_classes_data(raw_data)
     
+    # Split schedule data for sorting functionality
+    from app.core.parser import split_schedule_by_group_type
+    group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_data)
+    
     # Generate schedule combinations
     search_result = get_schedule_combinations(
         quad, normalized_subjects, start_hour, end_hour, languages, same_subgroup, relax_days, 
         blacklist_parsed, max_dead_hours, show_interface
     )
     
-    return search_result, parsed_data
+    return search_result, parsed_data, group_schedule, subgroup_schedule
