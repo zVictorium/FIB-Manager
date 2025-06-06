@@ -37,6 +37,8 @@ def add_search_arguments(parser: ArgumentParser, default_quad: str) -> None:
                         help="maximum number of days with classes")
     parser.add_argument("--blacklist", nargs="*", default=[], 
                         help="blacklisted groups (e.g., IES-10)")
+    parser.add_argument("--max-dead-hours", type=int, default=-1,
+                        help="maximum number of dead hours allowed (-1 for no limit)")
     parser.add_argument("-v", "--view", action="store_true", 
                         help="show search results in interactive interface")
 
@@ -68,12 +70,13 @@ def handle_search_command(args: Namespace) -> None:
     relax_days = 5 - max_days
     freedom = args.freedom
     same_subgroup = not freedom
+    max_dead_hours = args.max_dead_hours
     
     # Perform the schedule search
     result, classes = perform_schedule_search(
         args.quadrimester, args.subjects, args.start, args.end,
         normalized_languages, same_subgroup, relax_days,
-        args.blacklist, args.view
+        args.blacklist, max_dead_hours, args.view
     )
     
     # Display results in GUI or print JSON
@@ -94,6 +97,7 @@ def perform_schedule_search(
     same_subgroup: bool, 
     relax_days: int,
     blacklisted: list[str], 
+    max_dead_hours: int = -1,
     show_interface: bool = False
 ) -> tuple:
     """
@@ -108,6 +112,7 @@ def perform_schedule_search(
         same_subgroup: Whether subgroups must match groups
         relax_days: Number of days to relax the schedule by
         blacklisted: List of blacklisted groups
+        max_dead_hours: Maximum allowed dead hours (-1 for no limit)
         show_interface: Whether to show an interface
     
     Returns:
@@ -124,7 +129,7 @@ def perform_schedule_search(
     # Generate schedule combinations
     search_result = get_schedule_combinations(
         quad, normalized_subjects, start_hour, end_hour, languages, same_subgroup, relax_days, 
-        blacklist_parsed, show_interface
+        blacklist_parsed, max_dead_hours, show_interface
     )
     
     return search_result, parsed_data

@@ -21,6 +21,7 @@ def get_schedule_combinations(
     require_matching_subgroup: bool,
     relax_days: int,
     blacklist: List[List[Any]],
+    max_dead_hours: int = -1,
     show_progress: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -35,6 +36,7 @@ def get_schedule_combinations(
         require_matching_subgroup: Whether to require matching groups and subgroups
         relax_days: Number of days to relax the schedule by
         blacklist: List of [subject, group] pairs
+        max_dead_hours: Maximum allowed dead hours (-1 for no limit)
         show_progress: Whether to show a progress bar
     
     Returns:
@@ -50,7 +52,6 @@ def get_schedule_combinations(
     raw_data = fetch_classes_data(quadrimester, display_language)
     parsed_schedule = parse_classes_data(raw_data)
     group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_schedule)
-    
     valid_group_combos = get_valid_combinations(group_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     valid_subgroup_combos = get_valid_combinations(subgroup_schedule, subjects, blacklist, allowed_languages, start_hour, end_hour)
     
@@ -59,7 +60,7 @@ def get_schedule_combinations(
         group_schedule, subgroup_schedule,
         max_days, start_hour, end_hour,
         require_matching_subgroup, quadrimester,
-        show_progress
+        max_dead_hours, show_progress
     )
     
     natural_languages = [{"en": "English", "es": "Spanish", "ca": "Catalan"}.get(lang.lower(), lang)

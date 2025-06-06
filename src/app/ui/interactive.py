@@ -172,7 +172,6 @@ def select_search_params() -> tuple:
     ).ask()
     
     subjects = [item.split(" - ", 1)[0].upper() for item in subjects_selected]
-    
     blacklist_choices = get_group_choices(parsed_data, subjects)
     
     blacklisted = questionary.checkbox(
@@ -184,7 +183,23 @@ def select_search_params() -> tuple:
         use_search_filter=True
     ).ask()
     
-    return quad, subjects, start_hour, end_hour, languages, blacklisted, same_subgroup, relax_days
+    max_dead_hours_choice = questionary.select(
+        "Maximum dead hours allowed:", 
+        choices=["No limit", "0", "1", "2", "3", "4", "5"],
+        default="No limit", 
+        instruction="(Use ↑↓ and Enter)", 
+        style=QUESTIONARY_STYLE,
+        use_jk_keys=False, 
+        use_search_filter=True
+    ).ask()
+    
+    # Convert "No limit" to -1, otherwise convert to int
+    if max_dead_hours_choice == "No limit":
+        max_dead_hours = -1
+    else:
+        max_dead_hours = int(max_dead_hours_choice)
+    
+    return quad, subjects, start_hour, end_hour, languages, blacklisted, same_subgroup, relax_days, max_dead_hours
 
 
 def display_subjects_for_selection() -> None:
@@ -200,11 +215,11 @@ def perform_app_search() -> None:
     """Perform a schedule search from the app interface."""
     from app.commands.search import perform_schedule_search
     
-    quad, subjects, start_hour, end_hour, languages, blacklisted, same_subgroup, relax_days = select_search_params()
+    quad, subjects, start_hour, end_hour, languages, blacklisted, same_subgroup, relax_days, max_dead_hours = select_search_params()
     clear_screen()
     result, parsed_data = perform_schedule_search(
         quad, subjects, start_hour, end_hour, languages,
-        same_subgroup, relax_days, blacklisted, True
+        same_subgroup, relax_days, blacklisted, max_dead_hours, True
     )
     schedules = result.get("schedules", [])
     

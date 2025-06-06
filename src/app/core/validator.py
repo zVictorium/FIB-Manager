@@ -46,6 +46,42 @@ def get_days_with_classes(slots: Dict[Tuple[int, int], List[str]]) -> Set[int]:
     return {day for day, _ in slots.keys()}
 
 
+def count_dead_hours(slots: Dict[Tuple[int, int], List[str]]) -> int:
+    """
+    Count the number of dead hours in a schedule.
+    A dead hour is an hour without classes between two hours with classes on the same day.
+    
+    Args:
+        slots: Dictionary mapping (day, hour) slots to lists of subjects
+    
+    Returns:
+        Total number of dead hours across all days
+    """
+    dead_hours = 0
+    
+    # Group slots by day
+    days_schedule = {}
+    for (day, hour), subjects in slots.items():
+        if subjects:  # Only count hours with actual classes
+            days_schedule.setdefault(day, []).append(hour)
+    
+    # For each day, count dead hours between first and last class
+    for day, hours in days_schedule.items():
+        if len(hours) < 2:  # Need at least 2 classes to have dead hours
+            continue
+            
+        hours.sort()  # Ensure hours are in order
+        first_class = min(hours)
+        last_class = max(hours)
+        
+        # Count hours between first and last that don't have classes
+        for hour in range(first_class + 1, last_class):
+            if hour not in hours:
+                dead_hours += 1
+    
+    return dead_hours
+
+
 def is_within_time_bounds(hours: Set[int], start_hour: int, end_hour: int) -> bool:
     """
     Check if a schedule is within the specified time bounds.
@@ -165,7 +201,8 @@ def has_valid_combined_schedule(group_slots: Dict[Tuple[int, int], List[str]],
                                 subgroup_slots: Dict[Tuple[int, int], List[str]],
                                 max_days: int,
                                 start_hour: int,
-                                end_hour: int) -> bool:
+                                end_hour: int,
+                                max_dead_hours: int = -1) -> bool:
     """
     Check if a combined schedule is valid.
     
@@ -175,6 +212,7 @@ def has_valid_combined_schedule(group_slots: Dict[Tuple[int, int], List[str]],
         max_days: Maximum allowed days with classes
         start_hour: Minimum allowed hour
         end_hour: Maximum allowed hour
+        max_dead_hours: Maximum allowed dead hours (-1 for no limit)
     
     Returns:
         True if the combined schedule is valid, False otherwise
@@ -186,6 +224,8 @@ def has_valid_combined_schedule(group_slots: Dict[Tuple[int, int], List[str]],
     if has_schedule_conflicts(all_slots):
         return False
     if count_days_with_classes(group_slots, subgroup_slots) > max_days:
+        return False
+    if has_excessive_dead_hours(group_slots, subgroup_slots, max_dead_hours):
         return False
     hours = {hour for _, hour in all_slots.keys()} if all_slots else set()
     return is_within_time_bounds(hours, start_hour, end_hour)
@@ -267,6 +307,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
                           end_hour: int,
                           require_matching: bool,
                           quadrimester: str,
+                          max_dead_hours: int = -1,
                           show_progress: bool = False
                           ) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
@@ -282,6 +323,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
         end_hour: Maximum allowed hour
         require_matching: Whether to require matching groups and subgroups
         quadrimester: Quadrimester code
+        max_dead_hours: Maximum allowed dead hours (-1 for no limit)
         show_progress: Whether to show a progress bar
     
     Returns:
@@ -301,7 +343,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
             progress["count"] += 1
             group_slots = get_time_slots(group_schedule, group_combo)
             subgroup_slots = get_time_slots(subgroup_schedule, subgroup_combo)
-            if not has_valid_combined_schedule(group_slots, subgroup_slots, max_days, start_hour, end_hour):
+            if not has_valid_combined_schedule(group_slots, subgroup_slots, max_days, start_hour, end_hour, max_dead_hours):
                 continue
             if require_matching and not are_groups_matching(group_combo, subgroup_combo):
                 continue
@@ -313,3 +355,30 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
         progress["done"] = True
         thread.join()
     return merged_schedules, urls
+
+
+def has_excessive_dead_hours(group_slots: Dict[Tuple[int, int], List[str]],
+                             subgroup_slots: Dict[Tuple[int, int], List[str]],
+                             max_dead_hours: int) -> bool:
+    """
+    Check if a combined schedule has excessive dead hours.
+    
+    Args:
+        group_slots: Dictionary mapping (day, hour) slots to lists of subjects for groups
+        subgroup_slots: Dictionary mapping (day, hour) slots to lists of subjects for subgroups
+        max_dead_hours: Maximum allowed dead hours (-1 for no limit)
+    
+    Returns:
+        True if the schedule has excessive dead hours, False otherwise
+    """
+    if max_dead_hours < 0:  # No limit
+        return False
+    
+    # Merge slots from both groups
+    all_slots = {slot: subjects[:] for slot, subjects in group_slots.items()}
+    for slot, subjects in subgroup_slots.items():
+        all_slots.setdefault(slot, []).extend(subjects)
+    
+    # Count dead hours in the combined schedule
+    dead_hours = count_dead_hours(all_slots)
+    return dead_hours > max_dead_hours
