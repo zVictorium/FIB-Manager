@@ -1,6 +1,6 @@
-# FIB Manager CLI
+# FIB Manager
 
-A powerful command-line tool for FIB (Facultat d'Informàtica de Barcelona - UPC) students to search, generate, and manage class schedules and academic grade calculations using the official UPC public API.
+A powerful command-line and interactive console application for FIB (Facultat d'Informàtica de Barcelona - UPC) students to search, generate, and manage class schedules and academic grade calculations using the official UPC public API.
 
 ## 🚀 What is FIB Manager?
 
@@ -8,7 +8,7 @@ FIB Manager is designed to simplify academic life for computer science students 
 
 1. **Smart Schedule Generation**: Automatically finds all valid combinations of classes that fit your constraints
 2. **Interactive Schedule Viewer**: Beautiful visual interface to browse and compare different schedule options
-3. **Grade Calculator**: Advanced formula-based calculator for academic grade planning and analysis
+3. **Grade Calculator (Beta)**: Advanced formula-based calculator for academic grade planning and analysis
 4. **Subject Browser**: Comprehensive database of all available subjects per quadrimester
 
 ## ✨ Key Features
@@ -21,7 +21,7 @@ FIB Manager is designed to simplify academic life for computer science students 
 - **Direct Browser Integration**: One-click access to official UPC schedule URLs
 - **Multi-language Support**: Full support for Catalan, Spanish, and English interfaces
 
-### Grade Calculations
+### Grade Calculations (Beta)
 - **Formula-based Calculator**: Solve complex academic grade formulas with missing variables
 - **Interactive Grade Planner**: Plan required grades for upcoming exams to achieve target marks
 - **Mathematical Expression Support**: Handles complex formulas with operators, comparisons, and mathematical functions
@@ -130,13 +130,13 @@ If the installation was successful, you should see the help menu with all availa
 ![Subject Browser](docs/screenshots/subject-browser.png)
 *Browse all available subjects with multi-language support*
 
-### Grade Calculator
+### Grade Calculator (Beta)
 ![Grade Calculator](docs/screenshots/grade-calculator.png)
 *Interactive grade planning with formula-based calculations*
 
 ## 🎯 Usage
 
-FIB Manager offers three main modes of operation: **Interactive App**, **CLI Commands**, and **Grade Calculator**.
+FIB Manager offers three main modes of operation: **Interactive App**, **CLI Commands**, and **Grade Calculator (Beta)**.
 
 ### 🖥️ Interactive Mode (Recommended for Beginners)
 
@@ -151,7 +151,7 @@ fib-manager app
 - **Guided Setup**: Step-by-step configuration of schedule preferences
 - **Visual Schedule Viewer**: Navigate through compatible schedules with keyboard controls
 - **Instant Browser Opening**: Press SPACE to open current schedule in your web browser
-- **Grade Calculator**: Interactive grade planning and formula solving
+- **Grade Calculator (Beta)**: Interactive grade planning and formula solving
 
 ### 💻 Command Line Interface
 
@@ -168,9 +168,9 @@ fib-manager <command> [OPTIONS]
 | `app` | Start interactive application | `fib-manager app` |
 | `schedules` | Generate schedule combinations | `fib-manager schedules -s IES XC --start 9` |
 | `subjects` | List available subjects | `fib-manager subjects -q 2024Q1 -l en` |
-| `marks` | Calculate grades and solve formulas | `fib-manager marks --formula "EX1*0.6+EX2*0.4" --target 7.0` |
+| `marks` | Calculate grades and solve formulas (Beta) | `fib-manager marks --formula "EX1*0.6+EX2*0.4" --target 7.0` |
 
-### 📊 Grade Calculator
+### 📊 Grade Calculator (Beta)
 
 Solve complex academic grade formulas:
 
@@ -229,7 +229,7 @@ fib-manager subjects [OPTIONS]
 | `-l, --language` | String | `en` | Display language (`en`, `es`, `ca`) |
 | `-v, --view` | Flag | `False` | Interactive table viewer |
 
-### 📈 Marks Command
+### 📈 Marks Command (Beta)
 
 Advanced grade calculation and formula solving.
 
@@ -339,7 +339,7 @@ fib-manager app
 
 **In Interactive Mode:**
 1. **Schedule Planning**: Select subjects → Set preferences → Browse results
-2. **Grade Calculator**: Enter formula → Input known grades → Get required grades
+2. **Grade Calculator (Beta)**: Enter formula → Input known grades → Get required grades
 3. **Subject Explorer**: Browse by quadrimester → Filter by language → Export data
 
 ## ⌨️ Interactive Controls
@@ -368,7 +368,7 @@ When viewing schedules in the interactive interface:
 | `↑` / `↓` | Navigate menu options |
 | `SPACE` | Select/Toggle option |
 
-### Grade Calculator Controls
+### Grade Calculator Controls (Beta)
 
 | Key | Action |
 |-----|--------|
@@ -446,7 +446,7 @@ fib-manager/
    ```bash
    # Test CLI functionality
    fib-manager --help
-   fib-manager subjects -q 2024Q1
+   fib-manager subjects
    ```
 
 ### Code Style & Standards
@@ -560,7 +560,6 @@ For commercial use, please contact the maintainers.
 ### Getting Help
 
 - **Documentation**: This README covers most use cases
-- **Interactive Help**: Press `?` in interactive mode for context help
 - **Issues**: Report bugs or request features through GitHub issues
 - **Discussions**: Join community discussions for questions and tips
 
