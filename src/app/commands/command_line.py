@@ -34,6 +34,11 @@ def handle_app_command(args: Namespace) -> None:
     Args:
         args: ArgumentParser arguments
     """
+    # Set console title on Windows
+    import os
+    if os.name == 'nt':  # Windows
+        os.system('title FIB Manager')
+    
     if not check_windows_interactive():
         return
     
