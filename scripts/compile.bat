@@ -85,12 +85,12 @@ echo Pyfiglet path: %PYFIGLET_PATH%
 :: Compile the CLI application
 echo.
 echo ====================================
-echo    Compiling FIB Manager CLI...
+echo    Compiling fig-manager...
 echo ====================================
 echo.
 
 pyinstaller --onefile ^
-    --name "FIB Manager CLI" ^
+    --name "fig-manager" ^
     --icon src\logo.ico ^
     --distpath dist ^
     --workpath build ^
@@ -200,7 +200,7 @@ del temp_app_wrapper.py 2>nul
 set CLI_EXISTS=0
 set APP_EXISTS=0
 
-if exist "dist\FIB Manager CLI.exe" (
+if exist "dist\fig-manager.exe" (
     set CLI_EXISTS=1
 )
 
@@ -214,14 +214,14 @@ if %CLI_EXISTS%==1 if %APP_EXISTS%==1 (
     echo     Compilation SUCCESSFUL!
     echo ====================================
     echo.
-    echo CLI Executable created: dist\FIB Manager CLI.exe
-    dir "dist\FIB Manager CLI.exe" | find "FIB Manager CLI.exe"
+    echo CLI Executable created: dist\fig-manager.exe
+    dir "dist\fig-manager.exe" | find "fig-manager.exe"
     echo.
     echo APP Executable created: dist\FIB Manager.exe
     dir "dist\FIB Manager.exe" | find "FIB Manager.exe"
     echo.
     echo Usage:
-    echo   CLI: "dist\FIB Manager CLI.exe" [commands]
+    echo   CLI: "dist\fig-manager.exe" [commands]
     echo   APP: "dist\FIB Manager.exe"
     echo.
 ) else (
@@ -238,7 +238,7 @@ if %CLI_EXISTS%==1 if %APP_EXISTS%==1 (
 :: Clean up build artifacts (optional)
 echo Cleaning build artifacts...
 if exist "build" rmdir /s /q build
-if exist "FIB Manager CLI.spec" del "FIB Manager CLI.spec"
+if exist "fig-manager.spec" del "fig-manager.spec"
 if exist "FIB Manager.spec" del "FIB Manager.spec"
 
 echo.
