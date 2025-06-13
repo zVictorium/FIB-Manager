@@ -91,7 +91,7 @@ echo.
 
 pyinstaller --onefile ^
     --name "fig-manager" ^
-    --icon src\logo.ico ^
+    --icon docs\logo\logo.ico ^
     --distpath dist ^
     --workpath build ^
     --specpath . ^
@@ -146,7 +146,7 @@ echo.
 
 pyinstaller --onefile ^
     --name "FIB Manager" ^
-    --icon src\logo.ico ^
+    --icon docs\logo\logo.ico ^
     --distpath dist ^
     --workpath build ^
     --specpath . ^
