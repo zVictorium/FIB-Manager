@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+title FIB Manager - Compilation Script
 
 echo ====================================
 echo    FIB Manager Compilation Script
@@ -18,6 +19,7 @@ if not exist "venv" (
         pause
         exit /b 1
     )
+    echo Virtual environment created successfully.
 )
 
 :: Activate virtual environment
@@ -28,6 +30,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+echo Virtual environment activated successfully.
 
 :: Install dependencies
 echo Installing dependencies...
@@ -37,6 +40,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+echo Dependencies installed successfully.
 
 :: Check if PyInstaller is installed
 echo Checking PyInstaller...
@@ -49,8 +53,9 @@ if errorlevel 1 (
         pause
         exit /b 1
     )
+    echo PyInstaller installed successfully.
 ) else (
-    echo PyInstaller is already installed
+    echo PyInstaller is already installed.
 )
 
 :: Clean previous builds
@@ -85,7 +90,7 @@ echo Pyfiglet path: %PYFIGLET_PATH%
 :: Compile the CLI application
 echo.
 echo ====================================
-echo    Compiling fig-manager...
+echo    Compiling CLI Application...
 echo ====================================
 echo.
 
@@ -137,10 +142,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo CLI application compiled successfully.
+
 :: Compile the APP application
 echo.
 echo ====================================
-echo    Compiling FIB Manager APP...
+echo    Compiling APP Application...
 echo ====================================
 echo.
 
@@ -193,6 +200,8 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo APP application compiled successfully.
+
 :: Clean up wrapper script
 del temp_app_wrapper.py 2>nul
 
@@ -214,10 +223,10 @@ if %CLI_EXISTS%==1 if %APP_EXISTS%==1 (
     echo     Compilation SUCCESSFUL!
     echo ====================================
     echo.
-    echo CLI Executable created: dist\fig-manager.exe
+    echo CLI Executable: dist\fig-manager.exe
     dir "dist\fig-manager.exe" | find "fig-manager.exe"
     echo.
-    echo APP Executable created: dist\FIB Manager.exe
+    echo APP Executable: dist\FIB Manager.exe
     dir "dist\FIB Manager.exe" | find "FIB Manager.exe"
     echo.
     echo Usage:
@@ -229,13 +238,13 @@ if %CLI_EXISTS%==1 if %APP_EXISTS%==1 (
     echo ====================================
     echo     Compilation FAILED!
     echo ====================================
-    if %CLI_EXISTS%==0 echo CLI executable not found in dist directory
-    if %APP_EXISTS%==0 echo APP executable not found in dist directory
+    if %CLI_EXISTS%==0 echo Error: CLI executable not found in dist directory
+    if %APP_EXISTS%==0 echo Error: APP executable not found in dist directory
     pause
     exit /b 1
 )
 
-:: Clean up build artifacts (optional)
+:: Clean up build artifacts
 echo Cleaning build artifacts...
 if exist "build" rmdir /s /q build
 if exist "fig-manager.spec" del "fig-manager.spec"
@@ -243,7 +252,7 @@ if exist "FIB Manager.spec" del "FIB Manager.spec"
 
 echo.
 echo ====================================
-echo       Compilation Complete!
+echo     Compilation Complete!
 echo ====================================
 echo.
 

@@ -1,19 +1,26 @@
 @echo off
-title FIB Manager
-cls
-REM ensure virtual environment exists
-if not exist "..\\.venv\Scripts\activate" (
-    echo Virtual environment not found. Run setup.bat first.
+setlocal enabledelayedexpansion
+title FIB Manager - Application Launcher
+
+:: Change to project root directory
+cd /d "%~dp0\.."
+
+:: Check if virtual environment exists
+if not exist ".venv\Scripts\activate" (
+    echo Error: Virtual environment not found.
+    echo Please run setup.bat first to initialize the environment.
     pause
     exit /b 1
 )
 
-REM activate virtual environment
-call ..\\.venv\Scripts\activate || (
-    echo Failed to activate virtual environment!
+:: Activate virtual environment
+echo Activating virtual environment...
+call .venv\Scripts\activate
+if errorlevel 1 (
+    echo Error: Failed to activate virtual environment!
     pause
     exit /b 1
 )
 
-REM run the CLI app
+:: Run the CLI app
 fib-manager app %*

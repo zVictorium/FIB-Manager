@@ -1,51 +1,72 @@
 @echo off
-title FIB Manager Installer
-cls
-echo Setting up Python environment...
+setlocal enabledelayedexpansion
+title FIB Manager - Setup Script
 
-REM Upgrade pip to latest version
-python -m pip install --upgrade pip || (
-    echo Failed to upgrade pip!
+echo ====================================
+echo    FIB Manager Setup Script
+echo ====================================
+echo.
+
+:: Change to project root directory
+cd /d "%~dp0\.."
+
+:: Upgrade pip to latest version
+echo Upgrading pip to latest version...
+python -m pip install --upgrade pip
+if errorlevel 1 (
+    echo Error: Failed to upgrade pip!
     pause
     exit /b 1
 )
+echo Pip upgraded successfully.
 
-REM Create virtual environment
+:: Create virtual environment
 echo Creating virtual environment...
-python -m venv ..\.venv || (
-    echo Failed to create virtual environment!
+python -m venv .venv
+if errorlevel 1 (
+    echo Error: Failed to create virtual environment!
     pause
     exit /b 1
 )
+echo Virtual environment created successfully.
 
-REM Activate virtual environment
+:: Activate virtual environment
 echo Activating virtual environment...
-call ..\.venv\Scripts\activate || (
-    echo Failed to activate virtual environment!
+call .venv\Scripts\activate
+if errorlevel 1 (
+    echo Error: Failed to activate virtual environment!
     pause
     exit /b 1
 )
+echo Virtual environment activated successfully.
 
-REM Install requirements
+:: Install requirements
 echo Installing dependencies...
-pip install -r ..\requirements.txt || (
-    echo Failed to install dependencies!
+pip install -r requirements.txt
+if errorlevel 1 (
+    echo Error: Failed to install dependencies!
     pause
     exit /b 1
 )
+echo Dependencies installed successfully.
 
-REM Install package in development mode
+:: Install package in development mode
 echo Installing package in development mode...
-cd .. && pip install -e . || (
-    echo Failed to install package in development mode!
+pip install -e .
+if errorlevel 1 (
+    echo Error: Failed to install package in development mode!
     pause
     exit /b 1
 )
-cd scripts
+echo Package installed successfully.
 
-echo Setup completed successfully.
+echo.
+echo ====================================
+echo      Setup Complete!
+echo ====================================
+echo.
 
-REM Show help for the CLI tool
+:: Show help for the CLI tool
 echo Displaying help for fib-manager...
 fib-manager --help
 
