@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/screenshots/logo.png" alt="FIB Manager Logo" width="200">
+  <img src="docs/logo/logo.png" alt="FIB Manager Logo" width="200">
 </div>
 
 # FIB Manager
