@@ -6,6 +6,7 @@ import sys
 import webbrowser
 import atexit
 import msvcrt
+import re
 from typing import Dict, List, Any
 from pyfiglet import figlet_format
 from rich.console import Console
@@ -34,7 +35,7 @@ UI_THEME = Theme({
 QUESTIONARY_STYLE = QStyle([
     ("qmark", "fg:#FF5555 bold"),
     ("question", "fg:#FFFFFF"),
-    ("answer", "fg:#AAAAAA"),
+    ("answer", "fg:#FFFFFF"),
     ("pointer", "fg:#666666 bold"),
     ("highlighted", "fg:#FF5555 bold"),
     ("selected", "fg:#AAAAAA"),
@@ -361,7 +362,7 @@ def display_subjects_list(quad: str, lang: str) -> None:
 
 def display_marks_results(formula: str, values: dict, target: float, solution: dict, result: float) -> None:
     """
-    Display marks calculation results in a table format.
+    Display marks calculation results in a single table format.
     
     Args:
         formula: The formula used for calculation
@@ -376,52 +377,79 @@ def display_marks_results(formula: str, values: dict, target: float, solution: d
     header = Text("Marks Calculator", style="accent")
     console.rule(header, style="accent")
     console.print()
-    
-    # Formula and target table
-    formula_table = Table(title="Formula Information", header_style="secondary")
-    formula_table.add_column("Formula", style="white", header_style="bold")
-    formula_table.add_column("Target", justify="right", style="white", header_style="bold")
-    formula_table.add_column("Current Result", justify="right", style="white", header_style="bold")
-    formula_table.add_row(
-        formula,
-        str(round(target, 2)),
-        str(round(result, 2))
+      # Create a single comprehensive table
+    marks_table = Table(
+        header_style="secondary",
+        box=box.HORIZONTALS, 
+        title_style="bold white",
+        title_justify="center",
+        border_style="secondary",
+        show_header=True,
+        show_edge=False,
+        pad_edge=True,
+        highlight=False
     )
-    console.print(formula_table, justify="center")
+    marks_table.add_column("Formula", justify="center", style="white", header_style="bold")
+    marks_table.add_column(formula, justify="center", style="white", header_style="bold")
+    
+    # Add header row for variable section
+    marks_table.add_row(Text("", style="secondary"), Text("", style="secondary"))
+    
+    # Add all variable rows
+    variables = list(values.keys()) + list(solution.keys())
+    for var in sorted(variables):
+        if var in values:
+            # Known values - gray text
+            percentage = get_variable_percentage(formula, var)
+            row_text = f"{var} {percentage}"
+            marks_table.add_row(row_text, Text(f"{values[var]:.2f}", style="bold accent"))
+        else:
+            # Solution values - red text if not known
+            percentage = get_variable_percentage(formula, var)
+            row_text = f"{var} {percentage}"
+            marks_table.add_row(row_text, Text(f"{max(0, solution[var]):.2f}", style="red"))
+      # Add header row for results section
+    marks_table.add_row(Text("", style="secondary"), Text("", style="secondary"))
+    
+    # Add target and current result rows
+    marks_table.add_row(Text("Target", style="bold"), Text(f"{target:.2f}", style="bold accent"))
+    marks_table.add_row(Text("Mark", style="bold"), Text(f"{result:.2f}", style="bold"))
+    
+    console.print(marks_table, justify="center")
     console.print()
-    
-    # Known values table
-    if values:
-        known_table = Table(title="Known Variables", header_style="secondary")
-        known_table.add_column("Variable", style="white", header_style="bold")
-        known_table.add_column("Value", justify="right", style="white", header_style="bold")
-        
-        for var, val in sorted(values.items()):
-            known_table.add_row(var, str(round(val, 2)))
-        
-        console.print(known_table, justify="center")
-        console.print()
-    
-    # Solution table
-    if solution:
-        solution_table = Table(title="Calculated Variables", header_style="secondary")
-        solution_table.add_column("Variable", style="white", header_style="bold")
-        solution_table.add_column("Value", justify="right", style="accent", header_style="bold")
-        
-        for var, val in sorted(solution.items()):
-            solution_table.add_row(var, str(round(val, 2)))
-        
-        console.print(solution_table, justify="center")
-        console.print()
     
     console.print("\nESC to leave\nQ to quit", style="accent", justify="center")
     
     while True:
         key = msvcrt.getwch()
-        if key == "\x1b":
+        if key == "\x1b":  # ESC key
             show_cursor()
             clear_screen()
             break
         elif key.lower() == "q":
             show_cursor()
             sys.exit(0)
+
+
+def get_variable_percentage(formula: str, var_name: str) -> str:
+    """
+    Extract the percentage (coefficient) for a variable from the formula if available.
+    
+    Args:
+        formula: The formula string (e.g., "EX1*0.4+EX2*0.6")
+        var_name: The variable name to find the coefficient for
+    
+    Returns:
+        A formatted string with the percentage (e.g., "(40%)") or empty string if not found
+    """
+    # Look for patterns like "var*0.4" or "0.4*var"
+    pattern1 = rf"{var_name}\s*\*\s*(0\.\d+)"
+    pattern2 = rf"(0\.\d+)\s*\*\s*{var_name}"
+    
+    match = re.search(pattern1, formula) or re.search(pattern2, formula)
+    if match:
+        coefficient = float(match.group(1))
+        percentage = int(coefficient * 100)
+        return f"({percentage}%)"
+    
+    return ""

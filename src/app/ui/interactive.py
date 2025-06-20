@@ -249,8 +249,8 @@ def perform_marks_calculation() -> None:
     try:
         # Get formula from user
         formula = questionary.text(
-            "Enter formula (e.g., EX1 * 0.4 + EX2 * 0.6):",
-            instruction="Use variable names for marks",
+            "Enter formula:",
+            instruction="Use variable names for marks (e.g., EX1 * 0.4 + EX2 * 0.6)",
             style=QUESTIONARY_STYLE,
             validate=lambda text: bool(text.strip())
         ).ask()
@@ -260,8 +260,8 @@ def perform_marks_calculation() -> None:
         
         # Get target mark
         target_text = questionary.text(
-            "Enter target mark (e.g., 5.0):",
-            instruction="The minimum mark you want to achieve",
+            "Enter target mark:",
+            instruction="The minimum mark you want to achieve (e.g., 5.0)",
             style=QUESTIONARY_STYLE,
             validate=lambda text: text.replace('.', '', 1).isdigit() and 0 <= float(text) <= 10
         ).ask()
