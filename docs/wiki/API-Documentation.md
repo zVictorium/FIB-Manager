@@ -401,26 +401,7 @@ def test_api_response():
 - Solution: Verify subject code and quadrimester
 - Use: `fib-manager subjects` to list available subjects
 
-### Debug Mode
 
-Enable debug logging for API troubleshooting:
-
-```bash
-# Windows
-set FIB_DEBUG=true
-fib-manager subjects
-
-# Linux/macOS
-export FIB_DEBUG=true
-fib-manager subjects
-```
-
-Debug output includes:
-- API request URLs
-- Response status codes
-- Response headers
-- Timing information
-- Error details
 
 ## Future Enhancements
 

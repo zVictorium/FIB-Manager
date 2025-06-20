@@ -220,12 +220,6 @@ Error: Failed to fetch data: HTTP 500
    curl -I https://raco.fib.upc.edu/api/
    ```
 
-2. **Enable debug mode:**
-   ```cmd
-   set FIB_DEBUG=true
-   fib-manager subjects
-   ```
-
 **Solutions:**
 
 1. **Retry after delay:**
@@ -600,8 +594,7 @@ fib-manager schedules -s IES XC
 
 1. **Check for error messages:**
    ```cmd
-   REM Enable debug to see full output
-   set FIB_DEBUG=true
+   REM Look for error output in terminal
    fib-manager schedules -s IES XC
    ```
 
@@ -839,8 +832,7 @@ When reporting issues, include:
 
 2. **Error Details:**
    ```cmd
-   REM Enable debug mode
-   set FIB_DEBUG=true
+   REM Command that failed
    fib-manager command-that-fails
    ```
 
@@ -896,10 +888,4 @@ Include these elements:
 4. **Test basic connectivity:**
    ```cmd
    fib-manager subjects
-   ```
-
-5. **Use debug mode:**
-   ```cmd
-   set FIB_DEBUG=true
-   fib-manager command
    ```

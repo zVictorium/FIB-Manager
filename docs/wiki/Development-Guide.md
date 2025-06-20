@@ -324,27 +324,15 @@ python -m pytest -k "test_api"
 import logging
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('fib-manager-debug.log'),
+        logging.FileHandler('fib-manager.log'),
         logging.StreamHandler()
     ]
 )
 
 logger = logging.getLogger(__name__)
-```
-
-### Debug Mode
-
-Enable debug mode for development:
-
-```bash
-# Enable debug logging
-export FIB_DEBUG=true
-
-# Run with debug output
-fib-manager subjects
 ```
 
 ### Interactive Debugging
@@ -689,8 +677,7 @@ curl -I https://raco.fib.upc.edu/api/
 # Check DNS resolution
 nslookup raco.fib.upc.edu
 
-# Test with debug logging
-export FIB_DEBUG=true
+# Test API client directly
 python -c "from app.api import fetch_classes_data; print(fetch_classes_data('2024Q1', 'en'))"
 ```
 

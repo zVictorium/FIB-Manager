@@ -335,16 +335,15 @@ FIB Manager supports these environment variables for configuration:
 | `FIB_API_BASE_URL` | Override default API base URL | UPC official API |
 | `FIB_DEFAULT_LANGUAGE` | Default language for API requests | `en` |
 | `FIB_CACHE_TIMEOUT` | API response cache timeout (seconds) | `300` |
-| `FIB_DEBUG` | Enable debug logging | `false` |
 
 ### Example
 ```bash
 # Windows
-set FIB_DEBUG=true
+set FIB_DEFAULT_LANGUAGE=en
 fib-manager subjects
 
 # Linux/macOS  
-export FIB_DEBUG=true
+export FIB_DEFAULT_LANGUAGE=en
 fib-manager subjects
 ```
 

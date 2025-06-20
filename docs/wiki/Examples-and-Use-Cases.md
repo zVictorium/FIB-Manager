@@ -304,8 +304,7 @@ fib-manager subjects
 
 **Debugging Steps:**
 ```cmd
-REM Enable debug mode
-set FIB_DEBUG=true
+REM Test basic connectivity
 fib-manager subjects
 
 REM Check specific quadrimester
@@ -317,9 +316,9 @@ fib-manager subjects -l es
 
 **Expected Debug Output:**
 ```
-2024-06-13 10:30:15 DEBUG Making request to: https://raco.fib.upc.edu/api/...
-2024-06-13 10:30:16 DEBUG Response status: 200
-2024-06-13 10:30:16 DEBUG Response size: 15432 bytes
+2024-06-13 10:30:15 INFO Making request to: https://raco.fib.upc.edu/api/...
+2024-06-13 10:30:16 INFO Response status: 200
+2024-06-13 10:30:16 INFO Response size: 15432 bytes
 ```
 
 ## Real Student Scenarios

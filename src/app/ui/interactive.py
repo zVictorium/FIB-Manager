@@ -335,9 +335,11 @@ def run_interactive_app() -> None:
                 elif option == "Calculate marks":
                     perform_marks_calculation()
             except Exception as e:
-                print(f"Error in interactive menu: {e}")
-                traceback.print_exc()
-                input("Press Enter to continue...")
+                pass
+                # print(f"Error in interactive menu: {e}")
+                # traceback.print_exc()
+                # input("Press Enter to continue...")
     except Exception as e:
-        print(f"Fatal error in interactive app: {e}")
-        traceback.print_exc()
+        pass
+        # print(f"Fatal error in interactive app: {e}")
+        # traceback.print_exc()

@@ -58,6 +58,7 @@ fib-manager marks --formula "EX1*0.6+EX2*0.4" --target 7.0
 ## 📸 Screenshots
 
 ### Interactive App Main Menu
+![Main Screen](docs/screenshots/main-screen.png)
 ![Main Menu](docs/screenshots/main-menu.png)
 
 ### Schedule Browser

@@ -306,17 +306,14 @@ Set these environment variables for customization:
 ```bash
 # Windows
 set FIB_DEFAULT_LANGUAGE=en
-set FIB_DEBUG=false
 
 # macOS/Linux
 export FIB_DEFAULT_LANGUAGE=en
-export FIB_DEBUG=false
 ```
 
 Available variables:
 - `FIB_DEFAULT_LANGUAGE`: Default language (`en`, `es`, `ca`)
-- `FIB_DEBUG`: Enable debug logging (`true`/`false`)
-- `FIB_CACHE_TIMEOUT`: API cache timeout in seconds
+- `FIB_CACHE_TIMEOUT`: API response cache timeout in seconds
 
 ### Path Configuration
 
@@ -437,10 +434,6 @@ ping raco.fib.upc.edu
 
 # Test with curl
 curl -I https://raco.fib.upc.edu/api/
-
-# Use debug mode
-export FIB_DEBUG=true
-fib-manager subjects
 ```
 
 **Proxy or firewall issues:**
@@ -533,10 +526,9 @@ If you encounter issues during installation:
 
 1. **Check Requirements:** Ensure system meets minimum requirements
 2. **Review Logs:** Look for error messages in terminal output
-3. **Enable Debug Mode:** Set `FIB_DEBUG=true` for detailed logging
-4. **Consult Documentation:** Check troubleshooting section
-5. **Search Issues:** Look for similar problems in GitHub issues
-6. **Report Bugs:** Create new issue with installation details and error messages
+3. **Consult Documentation:** Check troubleshooting section
+4. **Search Issues:** Look for similar problems in GitHub issues
+5. **Report Bugs:** Create new issue with installation details and error messages
 
 **Information to include in bug reports:**
 - Operating system and version
