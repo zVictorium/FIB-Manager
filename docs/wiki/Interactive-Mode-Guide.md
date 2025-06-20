@@ -302,7 +302,7 @@ Select "Calculate marks" from main menu to enter the grade calculator interface.
 
 **Step 1: Formula Entry**
 ```
-Enter formula (e.g., EX1 * 0.4 + EX2 * 0.6):
+Enter formula (e.g., EX1*0.4+EX2*0.6):
 ❯ LAB*0.3 + MIDTERM*0.3 + FINAL*0.4
 
 Use variable names for marks
