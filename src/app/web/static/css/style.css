@@ -426,6 +426,7 @@ a:hover {
     padding: var(--space-xs) var(--space-sm);
     border-radius: var(--radius-sm);
     color: var(--terminal-cyan);
+    font-family: var(--font-mono) !important;
 }
 
 /* ============================================
