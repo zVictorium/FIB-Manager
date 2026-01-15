@@ -583,13 +583,13 @@ a:hover {
 .btn-primary {
     background-color: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: var(--bg-primary);
+    color: #ffffff;
 }
 
 .btn-primary:hover {
     background-color: var(--accent-secondary);
     border-color: var(--accent-secondary);
-    color: var(--bg-primary);
+    color: #ffffff;
 }
 
 .btn-secondary {
