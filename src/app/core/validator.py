@@ -1,18 +1,125 @@
 """
 Module for validating schedules and generating valid combinations.
+
+Optimized version with:
+- Precomputed slot sets for O(1) conflict detection
+- Early pruning during combination generation
+- Set-based operations for fast membership tests
+- Lazy evaluation with generators
+- Caching of computed values
 """
 
 import itertools
 import logging
 import sys
 import threading
-from typing import Dict, List, Tuple, Set, Any
+from functools import lru_cache
+from typing import Dict, List, Tuple, Set, Any, Iterator, FrozenSet, Optional
 
 from app.api import generate_schedule_url
 from app.core.utils import run_progress_thread
 
 # Initialize module logger
 logger = logging.getLogger(__name__)
+
+# Type aliases for clarity
+Slot = Tuple[int, int]  # (day, hour)
+SlotSet = FrozenSet[Slot]
+
+class SlotCache:
+    """Cache for precomputed slot information to avoid redundant calculations.
+    
+    This dramatically improves performance by computing slot sets once per group
+    instead of recomputing for every combination check.
+    """
+    
+    def __init__(self):
+        self._group_slots: Dict[Tuple[str, str], SlotSet] = {}
+        self._group_hours: Dict[Tuple[str, str], FrozenSet[int]] = {}
+        self._group_days: Dict[Tuple[str, str], FrozenSet[int]] = {}
+        self._dead_hours_cache: Dict[SlotSet, int] = {}
+    
+    def precompute_slots(self, schedule: Dict[str, Any]) -> None:
+        """Precompute all slot sets for a schedule."""
+        for subject, groups in schedule.items():
+            for group_id, classes in groups.items():
+                if not isinstance(classes, list):
+                    continue
+                key = (subject, group_id)
+                slots = frozenset((entry["day"], entry["hour"]) for entry in classes)
+                hours = frozenset(entry["hour"] for entry in classes)
+                days = frozenset(entry["day"] for entry in classes)
+                self._group_slots[key] = slots
+                self._group_hours[key] = hours
+                self._group_days[key] = days
+    
+    def get_slots(self, subject: str, group: str) -> SlotSet:
+        """Get cached slot set for a subject/group combination."""
+        return self._group_slots.get((subject, group), frozenset())
+    
+    def get_hours(self, subject: str, group: str) -> FrozenSet[int]:
+        """Get cached hours set for a subject/group combination."""
+        return self._group_hours.get((subject, group), frozenset())
+    
+    def get_days(self, subject: str, group: str) -> FrozenSet[int]:
+        """Get cached days set for a subject/group combination."""
+        return self._group_days.get((subject, group), frozenset())
+    
+    def get_combo_slots(self, schedule: Dict[str, Any], combination: Dict[str, Any]) -> SlotSet:
+        """Get combined slot set for a combination, using cache."""
+        all_slots: Set[Slot] = set()
+        for subject, group in combination.items():
+            all_slots.update(self.get_slots(subject, str(group)))
+        return frozenset(all_slots)
+    
+    def has_conflicts_fast(self, slots1: SlotSet, slots2: SlotSet) -> bool:
+        """Fast conflict detection using set intersection."""
+        return bool(slots1 & slots2)
+    
+    def get_dead_hours_cached(self, slots: SlotSet) -> int:
+        """Calculate dead hours with caching."""
+        if slots in self._dead_hours_cache:
+            return self._dead_hours_cache[slots]
+        
+        dead_hours = _calculate_dead_hours_from_slots(slots)
+        self._dead_hours_cache[slots] = dead_hours
+        return dead_hours
+
+
+# Global cache instance
+_slot_cache = SlotCache()
+
+
+def clear_cache() -> None:
+    """Clear the global slot cache.
+    
+    Call this between independent schedule searches to free memory
+    and avoid stale data issues.
+    """
+    global _slot_cache
+    _slot_cache = SlotCache()
+
+
+def _calculate_dead_hours_from_slots(slots: SlotSet) -> int:
+    """Calculate dead hours from a frozenset of slots."""
+    if not slots:
+        return 0
+    
+    # Group by day
+    days_hours: Dict[int, List[int]] = {}
+    for day, hour in slots:
+        days_hours.setdefault(day, []).append(hour)
+    
+    dead_hours = 0
+    for day, hours in days_hours.items():
+        if len(hours) < 2:
+            continue
+        hours_sorted = sorted(hours)
+        span = hours_sorted[-1] - hours_sorted[0] + 1
+        dead_hours += span - len(hours)
+    
+    return dead_hours
+
 
 def get_time_slots(schedule: Dict[str, Any], combination: Dict[str, Any]) -> Dict[Tuple[int, int], List[str]]:
     """
@@ -51,33 +158,34 @@ def count_dead_hours(slots: Dict[Tuple[int, int], List[str]]) -> int:
     Count the number of dead hours in a schedule.
     A dead hour is an hour without classes between two hours with classes on the same day.
     
+    Optimized version using set operations for faster computation.
+    
     Args:
         slots: Dictionary mapping (day, hour) slots to lists of subjects
     
     Returns:
         Total number of dead hours across all days
     """
-    dead_hours = 0
+    if not slots:
+        return 0
     
-    # Group slots by day
-    days_schedule = {}
+    # Group slots by day using a dict
+    days_hours: Dict[int, List[int]] = {}
     for (day, hour), subjects in slots.items():
         if subjects:  # Only count hours with actual classes
-            days_schedule.setdefault(day, []).append(hour)
+            days_hours.setdefault(day, []).append(hour)
     
-    # For each day, count dead hours between first and last class
-    for day, hours in days_schedule.items():
-        if len(hours) < 2:  # Need at least 2 classes to have dead hours
+    dead_hours = 0
+    for hours in days_hours.values():
+        if len(hours) < 2:
             continue
-            
-        hours.sort()  # Ensure hours are in order
+        # Optimized: use min/max and set membership instead of sorting
+        hours_set = set(hours)
         first_class = min(hours)
         last_class = max(hours)
-        
-        # Count hours between first and last that don't have classes
-        for hour in range(first_class + 1, last_class):
-            if hour not in hours:
-                dead_hours += 1
+        # Count gaps using range and set difference
+        expected_count = last_class - first_class + 1
+        dead_hours += expected_count - len(hours_set)
     
     return dead_hours
 
@@ -136,9 +244,15 @@ def is_valid_schedule(schedule: Dict[str, Any],
                       blacklist: List[List[Any]],
                       allowed_languages: List[str],
                       start_hour: int,
-                      end_hour: int) -> bool:
+                      end_hour: int,
+                      blacklist_set: Optional[FrozenSet[Tuple[str, int]]] = None) -> bool:
     """
     Check if a schedule is valid.
+    
+    Optimized version with:
+    - Set-based blacklist checking
+    - Early exit on any constraint violation
+    - Reduced redundant computations
     
     Args:
         schedule: Dictionary containing parsed class data
@@ -147,24 +261,51 @@ def is_valid_schedule(schedule: Dict[str, Any],
         allowed_languages: List of allowed languages
         start_hour: Minimum allowed hour
         end_hour: Maximum allowed hour
+        blacklist_set: Pre-computed frozenset for faster blacklist checks
     
     Returns:
         True if the schedule is valid, False otherwise
     """
-    used_slots = {}
-    hours_set = set()
+    # Use pre-computed blacklist set if available, otherwise compute
+    if blacklist_set is None:
+        blacklist_set = frozenset((item[0], int(item[1])) for item in blacklist)
+    
+    used_slots: Set[Tuple[int, int]] = set()
+    min_hour = float('inf')
+    max_hour = float('-inf')
+    
     for subject, group in combination.items():
-        if is_group_blacklisted(subject, group, blacklist):
+        group_int = int(group)
+        # Fast blacklist check using set
+        if (subject, group_int) in blacklist_set:
             return False
-        for entry in schedule.get(subject, {}).get(str(group), []):
-            if not is_language_compatible(entry.get("language", ""), allowed_languages):
+        
+        entries = schedule.get(subject, {}).get(str(group), [])
+        for entry in entries:
+            # Early language check
+            if allowed_languages:
+                lang = entry.get("language", "")
+                if lang and not any(al.lower() in lang.lower() for al in allowed_languages):
+                    return False
+            
+            hour = entry["hour"]
+            # Early time bounds check per entry
+            if hour < start_hour or hour > end_hour:
                 return False
-            slot = (entry["day"], entry["hour"])
+            
+            slot = (entry["day"], hour)
+            # Fast conflict detection using set
             if slot in used_slots:
                 return False
-            used_slots[slot] = True
-            hours_set.add(entry["hour"])
-    return is_within_time_bounds(hours_set, start_hour, end_hour)
+            used_slots.add(slot)
+            
+            # Track min/max for bounds check (optimized away since we check per entry)
+            if hour < min_hour:
+                min_hour = hour
+            if hour > max_hour:
+                max_hour = hour
+    
+    return True
 
 
 def has_schedule_conflicts(slots: Dict[Tuple[int, int], List[str]]) -> bool:
@@ -278,6 +419,11 @@ def get_valid_combinations(schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
     """
     Get valid schedule combinations.
     
+    Optimized version with:
+    - Pre-filtering of invalid groups before combination generation
+    - Precomputed blacklist set for O(1) lookup
+    - Reduced combination space through early constraint application
+    
     Args:
         schedule: Dictionary containing parsed class data
         subjects: List of subject codes
@@ -289,12 +435,77 @@ def get_valid_combinations(schedule: Dict[str, Dict[str, List[Dict[str, Any]]]],
     Returns:
         List of valid schedule combinations
     """
-    available = {s: list(schedule[s].keys()) for s in subjects if s in schedule}
-    all_combos = [dict(zip(available.keys(), combo)) for combo in itertools.product(*available.values())]
+    # Precompute blacklist set for O(1) lookups
+    blacklist_set = frozenset((item[0], int(item[1])) for item in blacklist)
+    
+    # Pre-filter valid groups per subject before generating combinations
+    # This dramatically reduces the combination space
+    valid_groups_per_subject: Dict[str, List[str]] = {}
+    
+    for subject in subjects:
+        if subject not in schedule:
+            continue
+        
+        valid_groups = []
+        for group_id, classes in schedule[subject].items():
+            if not isinstance(classes, list):
+                continue
+            
+            # Skip blacklisted groups
+            if (subject, int(group_id)) in blacklist_set:
+                continue
+            
+            # Check if group passes basic constraints
+            is_valid = True
+            for entry in classes:
+                hour = entry.get("hour", 0)
+                # Time bounds check
+                if hour < start_hour or hour > end_hour:
+                    is_valid = False
+                    break
+                # Language check
+                if allowed_languages:
+                    lang = entry.get("language", "")
+                    if lang and not any(al.lower() in lang.lower() for al in allowed_languages):
+                        is_valid = False
+                        break
+            
+            if is_valid:
+                valid_groups.append(group_id)
+        
+        if valid_groups:
+            valid_groups_per_subject[subject] = valid_groups
+    
+    # If any subject has no valid groups, return empty
+    if len(valid_groups_per_subject) != len([s for s in subjects if s in schedule]):
+        return []
+    
+    # Precompute slot cache for conflict detection
+    _slot_cache.precompute_slots(schedule)
+    
+    # Generate combinations only from valid groups
     valid = []
-    for combo in all_combos:
-        if is_valid_schedule(schedule, combo, blacklist, allowed_languages, start_hour, end_hour):
+    subjects_ordered = list(valid_groups_per_subject.keys())
+    group_lists = [valid_groups_per_subject[s] for s in subjects_ordered]
+    
+    for combo_tuple in itertools.product(*group_lists):
+        combo = dict(zip(subjects_ordered, combo_tuple))
+        
+        # Fast conflict check using precomputed slots
+        all_slots: Set[Tuple[int, int]] = set()
+        has_conflict = False
+        
+        for subject, group in combo.items():
+            group_slots = _slot_cache.get_slots(subject, group)
+            # Check for conflicts with already added slots
+            if all_slots & group_slots:
+                has_conflict = True
+                break
+            all_slots.update(group_slots)
+        
+        if not has_conflict:
             valid.append(combo)
+    
     return valid
 
 
@@ -312,6 +523,12 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
                           ) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Merge valid group and subgroup schedules.
+    
+    Optimized version with:
+    - Precomputed slot sets for fast conflict detection
+    - Early matching check before expensive slot computation
+    - Cached slot sets avoid redundant computation
+    - Fast set-based operations for conflict and day checks
     
     Args:
         group_combos: List of valid group combinations
@@ -331,29 +548,90 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
     """
     merged_schedules = []
     urls = []
+    
+    # Precompute slots for both schedules
+    _slot_cache.precompute_slots(group_schedule)
+    _slot_cache.precompute_slots(subgroup_schedule)
+    
+    # Precompute slot sets for all group combinations (avoid redundant computation)
+    group_combo_slots: Dict[int, Tuple[SlotSet, FrozenSet[int]]] = {}
+    for i, combo in enumerate(group_combos):
+        slots: Set[Slot] = set()
+        days: Set[int] = set()
+        for subject, group in combo.items():
+            group_slots = _slot_cache.get_slots(subject, group)
+            group_days = _slot_cache.get_days(subject, group)
+            slots.update(group_slots)
+            days.update(group_days)
+        group_combo_slots[i] = (frozenset(slots), frozenset(days))
+    
+    # Precompute slot sets for all subgroup combinations
+    subgroup_combo_slots: Dict[int, Tuple[SlotSet, FrozenSet[int]]] = {}
+    for i, combo in enumerate(subgroup_combos):
+        slots: Set[Slot] = set()
+        days: Set[int] = set()
+        for subject, group in combo.items():
+            sub_slots = _slot_cache.get_slots(subject, group)
+            sub_days = _slot_cache.get_days(subject, group)
+            slots.update(sub_slots)
+            days.update(sub_days)
+        subgroup_combo_slots[i] = (frozenset(slots), frozenset(days))
+    
+    # If require_matching, precompute matching map to avoid redundant checks
+    matching_subgroups: Optional[Dict[int, List[int]]] = None
+    if require_matching:
+        matching_subgroups = {}
+        for gi, group_combo in enumerate(group_combos):
+            matching = []
+            for si, subgroup_combo in enumerate(subgroup_combos):
+                if are_groups_matching(group_combo, subgroup_combo):
+                    matching.append(si)
+            matching_subgroups[gi] = matching
+    
     total_iters = max(len(group_combos) * len(subgroup_combos), 1)
     progress = {"count": 0, "total": total_iters, "done": False}
     thread = None
     if show_progress and sys.stdout.isatty():
         thread = threading.Thread(target=run_progress_thread, args=(progress,), daemon=True)
         thread.start()
-
-    for group_combo in group_combos:
-        for subgroup_combo in subgroup_combos:
+    
+    for gi, group_combo in enumerate(group_combos):
+        g_slots, g_days = group_combo_slots[gi]
+        
+        # Determine which subgroups to check
+        subgroup_indices = matching_subgroups[gi] if matching_subgroups else range(len(subgroup_combos))
+        
+        for si in subgroup_indices:
             progress["count"] += 1
-            group_slots = get_time_slots(group_schedule, group_combo)
-            subgroup_slots = get_time_slots(subgroup_schedule, subgroup_combo)
-            if not has_valid_combined_schedule(group_slots, subgroup_slots, max_days, start_hour, end_hour, max_dead_hours):
+            subgroup_combo = subgroup_combos[si]
+            s_slots, s_days = subgroup_combo_slots[si]
+            
+            # Fast conflict check using set intersection
+            if g_slots & s_slots:
                 continue
-            if require_matching and not are_groups_matching(group_combo, subgroup_combo):
+            
+            # Fast days check
+            combined_days = g_days | s_days
+            if len(combined_days) > max_days:
                 continue
+            
+            # Check dead hours only if there's a limit
+            if max_dead_hours >= 0:
+                combined_slots = g_slots | s_slots
+                dead_hours = _slot_cache.get_dead_hours_cached(combined_slots)
+                if dead_hours > max_dead_hours:
+                    continue
+            
+            # All checks passed - create schedule entry
             subjects_entry = create_schedule_subjects(group_combo, subgroup_combo)
             url = generate_schedule_url(subjects_entry, quadrimester)
             merged_schedules.append({"subjects": subjects_entry, "url": url})
             urls.append(url)
+    
     if thread:
         progress["done"] = True
         thread.join()
+    
     return merged_schedules, urls
 
 

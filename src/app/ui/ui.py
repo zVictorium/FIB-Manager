@@ -5,8 +5,14 @@ User interface module for FIB Manager.
 import sys
 import webbrowser
 import atexit
-import msvcrt
 import re
+import os
+
+# Import msvcrt only on Windows
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 from typing import Dict, List, Any
 from pyfiglet import figlet_format
 from rich.console import Console
@@ -22,6 +28,73 @@ from app.core.constants import WEEKDAYS, LANG_FLAGS, SUBJECT_COLORS, SORT_MODE_G
 from app.core.utils import clear_screen, hide_cursor, show_cursor, normalize_language, is_interactive_mode
 from app.core.parser import parse_classes_data
 from app.core.validator import sort_schedules_by_mode
+
+
+def get_key_input():
+    """Cross-platform function to get single key input without echo."""
+    if msvcrt is not None:
+        # Windows
+        key = msvcrt.getwch()
+        if key == '\xe0':  # Special key prefix on Windows
+            code = msvcrt.getwch()
+            # Map Windows arrow key codes to consistent names
+            arrow_map = {
+                'K': 'LEFT',   # Left arrow
+                'M': 'RIGHT',  # Right arrow
+                'H': 'UP',     # Up arrow  
+                'P': 'DOWN'    # Down arrow
+            }
+            return arrow_map.get(code, key + code)
+        return key
+    else:
+        # Unix/Linux
+        import termios
+        import tty
+        
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            
+            # Read the first character
+            key = sys.stdin.read(1)
+            
+            # Handle escape sequences (arrow keys, function keys, etc.)
+            if key == '\x1b':  # ESC character
+                # For arrow keys, we expect the sequence to be: ESC [ {A,B,C,D}
+                # Read the full sequence in raw mode
+                try:
+                    # Read next character - should be '['
+                    bracket = sys.stdin.read(1)
+                    if bracket == '[':
+                        # Read the direction character
+                        direction = sys.stdin.read(1)
+                        sequence = key + bracket + direction
+                        
+                        # Map arrow keys to more intuitive names
+                        arrow_map = {
+                            '\x1b[A': 'UP',
+                            '\x1b[B': 'DOWN', 
+                            '\x1b[C': 'RIGHT',
+                            '\x1b[D': 'LEFT'
+                        }
+                        mapped_key = arrow_map.get(sequence)
+                        if mapped_key:
+                            return mapped_key
+                        else:
+                            # Unknown escape sequence, return as-is
+                            return sequence
+                    else:
+                        # Not an arrow key sequence, return the characters we read
+                        return key + bracket
+                except:
+                    # If we can't read more characters, it's probably just ESC
+                    return key
+            
+            return key
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
 
 # Setup console and theme
 UI_THEME = Theme({
@@ -181,7 +254,7 @@ def display_interface_schedule(index: int, total: int, schedules: list[dict], pa
     toggle_text = "TAB to show groups" if grid_view else "TAB to show schedule"
     console.print(toggle_text, style="primary", justify="center")
     console.print("←→ to navigate", style="warning", justify="center")
-    console.print("ESC to leave\nQ to quit", style="accent", justify="center")
+    console.print("E to leave\nQ to quit", style="accent", justify="center")
 
 
 def display_interface_schedule_with_sort(index: int, total: int, schedules: list[dict], parsed_classes: dict,
@@ -233,7 +306,7 @@ def display_interface_schedule_with_sort(index: int, total: int, schedules: list
     
     console.print(sort_text, style="primary", justify="center")
     console.print("←→ to navigate", style="warning", justify="center")
-    console.print("ESC to leave\nQ to quit", style="accent", justify="center")
+    console.print("E to leave\nQ to quit", style="accent", justify="center")
 
 
 def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: int, end_hour: int, 
@@ -267,7 +340,7 @@ def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: 
                                        start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
     
     while is_interactive_mode():
-        key = msvcrt.getwch()
+        key = get_key_input()
         if key == " ":
             webbrowser.open(current_schedules[current_index]["url"])
         elif key == "\t":
@@ -282,16 +355,16 @@ def navigate_schedules(schedules: list[dict], parsed_classes: dict, start_hour: 
             current_index = 0  # Reset to first schedule after sorting
             display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
                                                 start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
-        elif key == "\xe0":
-            code = msvcrt.getwch()
-            if code in ("M", "K"):
-                current_index = (current_index + 1 if code == "M" else current_index - 1) % total
+        elif key in ("RIGHT", "LEFT", "UP", "DOWN"):
+            # Handle cross-platform arrow keys
+            if key in ("RIGHT", "LEFT"):
+                current_index = (current_index + 1 if key == "RIGHT" else current_index - 1) % total
                 display_interface_schedule_with_sort(current_index, total, current_schedules, parsed_classes, 
                                                    start_hour, end_hour, subject_colors, grid_view, current_sort_mode)
         elif key.lower() == "q":
             show_cursor()
             sys.exit(0)
-        elif key == "\x1b":
+        elif key.lower() == "e":
             break
     
     clear_screen()
@@ -312,7 +385,7 @@ def display_splash_screen() -> None:
         console.print(" " * pad + line, style="accent", markup=False)
     
     console.print(subtitle, style="warning", justify="center")
-    msvcrt.getwch()
+    get_key_input()
 
 
 def display_subjects_list(quad: str, lang: str) -> None:
@@ -347,11 +420,11 @@ def display_subjects_list(quad: str, lang: str) -> None:
         table.add_row(subject, names.get(subject, subject))
     
     console.print(Align(table, align="center"))
-    console.print(Align(Text("\nESC to leave\nQ to quit", style="accent", justify="center"), align="center"))
+    console.print(Align(Text("\nE to leave\nQ to quit", style="accent", justify="center"), align="center"))
     
     while True:
-        key = msvcrt.getwch()
-        if key == "\x1b":
+        key = get_key_input()
+        if key.lower() == "e":
             show_cursor()
             clear_screen()
             break
@@ -418,11 +491,11 @@ def display_marks_results(formula: str, values: dict, target: float, solution: d
     console.print(marks_table, justify="center")
     console.print()
     
-    console.print("\nESC to leave\nQ to quit", style="accent", justify="center")
+    console.print("\nE to leave\nQ to quit", style="accent", justify="center")
     
     while True:
-        key = msvcrt.getwch()
-        if key == "\x1b":  # ESC key
+        key = get_key_input()
+        if key.lower() == "e":  # E key
             show_cursor()
             clear_screen()
             break

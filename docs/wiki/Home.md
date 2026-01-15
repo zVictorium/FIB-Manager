@@ -1,54 +1,91 @@
 # FIB Manager Wiki
 
-Welcome to the comprehensive technical documentation for FIB Manager, a powerful CLI and interactive application for FIB students at UPC.
+Welcome to the **FIB Manager** wiki! This documentation provides comprehensive information about using and configuring FIB Manager for your academic scheduling needs at FIB (Facultat d'Informàtica de Barcelona - UPC).
 
-## 📚 Documentation Sections
+## 📖 Table of Contents
 
-### User Documentation
-- [Installation Guide](Installation-Guide.md) - Detailed installation instructions for all platforms
-- [CLI Reference](CLI-Reference.md) - Complete command-line interface documentation
-- [Interactive Mode Guide](Interactive-Mode-Guide.md) - How to use the interactive console application
-- [Examples and Use Cases](Examples-and-Use-Cases.md) - Practical examples and common scenarios
+- [Home](Home.md) ← You are here
+- [Installation Guide](Installation.md)
+- [Commands Reference](Commands.md)
+- [Interactive Mode Guide](Interactive-Mode.md)
+- [API Reference](API-Reference.md)
+- [FAQ & Troubleshooting](FAQ.md)
 
-### Technical Documentation
-- [Architecture Overview](Architecture-Overview.md) - System design and component interactions
-- [API Documentation](API-Documentation.md) - UPC API integration and data handling
-- [Code Structure](Code-Structure.md) - Detailed codebase organization and modules
-- [Development Guide](Development-Guide.md) - Contributing guidelines and development setup
+## 🎯 What is FIB Manager?
 
-### Advanced Topics
-- [Schedule Generation Algorithm](Schedule-Generation-Algorithm.md) - How schedule combinations are calculated
-- [Grade Calculator Engine](Grade-Calculator-Engine.md) - Formula parsing and evaluation system
-- [Configuration and Customization](Configuration-and-Customization.md) - Advanced configuration options
-- [Troubleshooting Guide](Troubleshooting-Guide.md) - Common issues and solutions
+FIB Manager is a powerful command-line and interactive console application designed specifically for FIB students. It helps you:
 
-### Reference
-- [Constants and Configuration](Constants-and-Configuration.md) - Application constants and settings
-- [Error Codes and Messages](Error-Codes-and-Messages.md) - Complete error reference
-- [Performance Optimization](Performance-Optimization.md) - Performance tips and limitations
-- [Changelog](Changelog.md) - Version history and changes
+- **Generate Smart Schedules**: Automatically find all valid class combinations that fit your constraints
+- **Browse Available Subjects**: Explore all subjects available per quadrimester with detailed information
+- **Calculate Grades**: Use advanced formula-based calculations for academic grade planning (Beta)
+- **Visualize Schedules**: Beautiful interactive interface to browse and compare different schedule options
 
 ## 🚀 Quick Start
 
-For new users, we recommend starting with:
-1. [Installation Guide](Installation-Guide.md) - Get FIB Manager up and running
-2. [CLI Reference](CLI-Reference.md) - Learn the basic commands
-3. [Examples and Use Cases](Examples-and-Use-Cases.md) - See practical usage scenarios
+### Using Pre-built Executables
 
-## 🔧 For Developers
+1. Download the latest release from [GitHub Releases](https://github.com/zvictorium/fib-manager/releases)
+2. Run `FIB Manager.exe` for interactive mode, or `fib-manager.exe` for CLI
 
-If you're interested in contributing or understanding the codebase:
-1. [Development Guide](Development-Guide.md) - Set up your development environment
-2. [Architecture Overview](Architecture-Overview.md) - Understand the system design
-3. [Code Structure](Code-Structure.md) - Navigate the codebase effectively
+### Using Python
 
-## 📖 Additional Resources
+```bash
+# Clone the repository
+git clone https://github.com/zvictorium/fib-manager.git
+cd fib-manager
 
-- **Main Repository**: [https://github.com/zvictorium/fib-manager](https://github.com/zvictorium/fib-manager)
-- **Issue Tracker**: [https://github.com/zvictorium/fib-manager/issues](https://github.com/zvictorium/fib-manager/issues)
-- **Releases**: [https://github.com/zvictorium/fib-manager/releases](https://github.com/zvictorium/fib-manager/releases)
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python -m app app
+```
+
+## 💡 Features Overview
+
+### Schedule Generation
+
+FIB Manager fetches real-time data from the official UPC FIB API and generates all possible schedule combinations based on your preferences:
+
+- Time constraints (start/end hours)
+- Language preferences (English, Spanish, Catalan)
+- Maximum days with classes
+- Group blacklisting
+- Dead hours limits
+
+### Interactive Interface
+
+The interactive mode provides a user-friendly experience with:
+
+- Visual schedule browser
+- Subject explorer
+- Grade calculator
+- Easy parameter selection
+
+### Command Line Interface
+
+For power users and automation, the CLI offers:
+
+- JSON output for integration with other tools
+- Scripting support
+- All features accessible via command arguments
+
+## 📊 Data Source
+
+FIB Manager uses the official UPC FIB Public API:
+- **Base URL**: `https://api.fib.upc.edu/v2`
+- **Data**: Real-time class schedules, subjects, and groups
+
+## 🔗 Quick Links
+
+- [GitHub Repository](https://github.com/zvictorium/fib-manager)
+- [Report Issues](https://github.com/zvictorium/fib-manager/issues)
+- [Download Releases](https://github.com/zvictorium/fib-manager/releases)
+
+## 📄 License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)**.
 
 ---
 
-**Last Updated**: June 2025  
-**Version**: Compatible with FIB Manager v2.0+
+**Next**: [Installation Guide →](Installation.md)

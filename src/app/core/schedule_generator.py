@@ -1,5 +1,10 @@
 """
 Scheduler module that uses other modules to generate valid schedules.
+
+Optimized for performance with:
+- Precomputed slot caching
+- Early constraint pruning
+- Set-based conflict detection
 """
 
 from typing import Dict, List, Any
@@ -10,7 +15,8 @@ from app.core.parser import parse_classes_data, split_schedule_by_group_type
 from app.core.validator import (
     get_valid_combinations,
     merge_valid_schedules,
-    sort_schedules_by_mode
+    sort_schedules_by_mode,
+    clear_cache
 )
 
 def get_schedule_combinations(
@@ -51,6 +57,9 @@ def get_schedule_combinations(
     max_days = 5 - relax_days
     original_end_hour = end_hour
     end_hour -= 1  # adjust inclusive
+
+    # Clear cache before new search to avoid stale data
+    clear_cache()
 
     raw_data = fetch_classes_data(quadrimester, display_language)
     parsed_schedule = parse_classes_data(raw_data)

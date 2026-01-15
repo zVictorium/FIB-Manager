@@ -8,16 +8,7 @@ echo
 # Change to project root directory
 cd "$(dirname "$0")/.."
 
-# Upgrade pip to latest version
-echo "Upgrading pip to latest version..."
-python3 -m pip install --upgrade pip
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to upgrade pip!"
-    exit 1
-fi
-echo "Pip upgraded successfully."
-
-# Create virtual environment
+# Create virtual environment first (to avoid externally-managed-environment error)
 echo "Creating virtual environment..."
 python3 -m venv .venv
 if [ $? -ne 0 ]; then
@@ -34,6 +25,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "Virtual environment activated successfully."
+
+# Upgrade pip to latest version (inside virtual environment)
+echo "Upgrading pip to latest version..."
+pip install --upgrade pip
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to upgrade pip!"
+    exit 1
+fi
+echo "Pip upgraded successfully."
 
 # Install requirements
 echo "Installing dependencies..."
@@ -63,4 +63,8 @@ echo
 echo "Displaying help for fib-manager..."
 fib-manager --help
 
-read -p "Press Enter to continue..."
+echo
+echo "Setup completed successfully!"
+echo "To run the application:"
+echo "  1. Activate the virtual environment: source .venv/bin/activate"
+echo "  2. Run: fib-manager app"

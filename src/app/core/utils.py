@@ -7,8 +7,13 @@ import sys
 import time
 import shutil
 import threading
-import msvcrt
 from datetime import date
+
+# Import msvcrt only on Windows
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 from typing import Dict, List, Any
 from rich.console import Console
 from rich.text import Text
@@ -37,7 +42,7 @@ def show_cursor() -> None:
 def is_interactive_mode() -> bool:
     """Check if the terminal is in interactive mode."""
     try:
-        return sys.stdout.isatty() and msvcrt is not None
+        return sys.stdout.isatty()
     except NameError:
         return False
 
