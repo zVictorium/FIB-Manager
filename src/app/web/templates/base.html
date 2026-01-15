@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FIB Manager{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="{{ url_for('index') }}" class="logo">
+                <span class="logo-bracket">[</span>
+                <span class="logo-text">fib-manager</span>
+                <span class="logo-bracket">]</span>
+            </a>
+            <nav class="nav">
+                <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">~/home</a>
+                <a href="{{ url_for('subjects') }}" class="nav-link {% if request.endpoint == 'subjects' %}active{% endif %}">~/subjects</a>
+                <a href="{{ url_for('search') }}" class="nav-link {% if 'search' in request.endpoint %}active{% endif %}">~/search</a>
+                <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">~/about</a>
+            </nav>
+        </header>
+
+        <main class="main">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <span class="footer-text">FIB Manager v1.0.0</span>
+            </div>
+        </footer>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

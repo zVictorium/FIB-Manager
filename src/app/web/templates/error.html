@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Error - FIB Manager{% endblock %}
+
+{% block content %}
+<section class="error-section">
+    <div class="error-card">
+        <div class="error-header">
+            <span class="error-code">ERROR</span>
+        </div>
+        <div class="error-body">
+            <div class="error-message">
+                <span class="prompt">$</span>
+                <span class="command">{{ error }}</span>
+            </div>
+            <div class="error-trace">
+                <pre>
+╔═══════════════════════════════════════╗
+║  Something went wrong                 ║
+║                                       ║
+║  > Check your input parameters        ║
+║  > Verify network connection          ║
+║  > Try again later                    ║
+╚═══════════════════════════════════════╝
+                </pre>
+            </div>
+        </div>
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <span class="btn-icon">&lt;</span> Go Home
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <span class="btn-icon">↺</span> Go Back
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

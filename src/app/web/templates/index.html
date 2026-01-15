@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}FIB Manager - Home{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="terminal-window">
+        <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">bash ~ fib-manager</span>
+        </div>
+        <div class="terminal-body">
+            <div class="terminal-line">
+                <span class="prompt">$</span>
+                <span class="command">fib-manager --help</span>
+            </div>
+            <div class="terminal-output">
+                <pre>  _____ ___ ____    __  __                                   
+ |  ___|_ _| __ )  |  \/  | __ _ _ __   __ _  __ _  ___ _ __ 
+ | |_   | ||  _ \  | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
+ |  _|  | || |_) | | |  | | (_| | | | | (_| | (_| |  __/ |   
+ |_|   |___|____/  |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|   
+                                             |___/           
+
+ Schedule Manager for FIB-UPC Students</pre>
+            </div>
+            <div class="terminal-line">
+                <span class="prompt">$</span>
+                <span class="cursor">█</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <h2 class="section-title">
+        <span class="comment">// available commands</span>
+    </h2>
+    
+    <div class="feature-grid">
+        <a href="{{ url_for('subjects') }}" class="feature-card">
+            <div class="feature-icon">&gt;_</div>
+            <h3 class="feature-title">subjects</h3>
+            <p class="feature-desc">List all available subjects for a quadrimester</p>
+            <code class="feature-usage">fib-manager subjects -q {{ default_quad }}</code>
+        </a>
+        
+        <a href="{{ url_for('search') }}" class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-title">search</h3>
+            <p class="feature-desc">Find optimal schedule combinations</p>
+            <code class="feature-usage">fib-manager schedules -s PROP FM</code>
+        </a>
+        
+        <a href="{{ url_for('about') }}" class="feature-card">
+            <div class="feature-icon">?</div>
+            <h3 class="feature-title">about</h3>
+            <p class="feature-desc">Learn more about this project</p>
+            <code class="feature-usage">fib-manager --version</code>
+        </a>
+    </div>
+</section>
+
+<section class="quick-start" style="margin-top: 3rem;">
+    <h2 class="section-title">
+        <span class="comment">// quick start</span>
+    </h2>
+    
+    <div class="code-block">
+        <div class="code-header">
+            <span class="code-lang">bash</span>
+        </div>
+        <pre class="code-content">
+<span class="line-number">1</span>  <span class="comment"># Install FIB Manager</span>
+<span class="line-number">2</span>  <span class="keyword">pip</span> install fib-manager
+<span class="line-number">3</span>
+<span class="line-number">4</span>  <span class="comment"># Start web interface</span>
+<span class="line-number">5</span>  <span class="keyword">fib-manager</span> web
+<span class="line-number">6</span>
+<span class="line-number">7</span>  <span class="comment"># Or use CLI to search schedules</span>
+<span class="line-number">8</span>  <span class="keyword">fib-manager</span> schedules -s PROP FM AC -v</pre>
+    </div>
+</section>
+{% endblock %}

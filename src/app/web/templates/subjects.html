@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Subjects - FIB Manager{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">
+        <span class="prompt">$</span> subjects
+        <span class="cursor">█</span>
+    </h1>
+    <p class="page-desc">List of available subjects for quadrimester <code>{{ quad }}</code></p>
+</section>
+
+<section class="filter-section">
+    <form action="{{ url_for('subjects') }}" method="GET" class="filter-form">
+        <div class="form-group">
+            <label for="quad" class="form-label">--quadrimester</label>
+            <input type="text" id="quad" name="quad" value="{{ quad }}" class="form-input" placeholder="e.g., {{ default_quad }}">
+        </div>
+        <div class="form-group">
+            <label for="lang" class="form-label">--language</label>
+            <select id="lang" name="lang" class="form-select">
+                <option value="en" {% if lang == 'en' %}selected{% endif %}>English</option>
+                <option value="es" {% if lang == 'es' %}selected{% endif %}>Español</option>
+                <option value="ca" {% if lang == 'ca' %}selected{% endif %}>Català</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <span class="btn-icon">&gt;</span> Execute
+        </button>
+    </form>
+</section>
+
+<section class="results-section">
+    <div class="results-header">
+        <span class="results-count">{{ subjects|length }} subjects found</span>
+        <span class="results-quad">@ {{ quad }}</span>
+    </div>
+    
+    <div class="subjects-grid">
+        {% for subject in subjects %}
+        <div class="subject-card">
+            <span class="subject-code">{{ subject.code }}</span>
+            <span class="subject-name">{{ subject.name }}</span>
+        </div>
+        {% else %}
+        <div class="no-results">
+            <span class="no-results-icon">∅</span>
+            <p>No subjects found for this quadrimester</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

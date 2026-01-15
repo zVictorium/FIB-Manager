@@ -12,6 +12,7 @@ from app.ui.ui import check_windows_interactive
 from app.commands.search import add_search_arguments, handle_search_command
 from app.commands.subjects import add_subjects_arguments, handle_subjects_command
 from app.commands.marks import add_marks_arguments, handle_marks_command
+from app.commands.web import add_web_arguments, handle_web_command
 
 def print_json(data: dict) -> None:
     """
@@ -78,6 +79,10 @@ def build_argument_parser(default_quad: str) -> ArgumentParser:
     marks_parser = subparsers.add_parser("marks", help="manage subject marks")
     add_marks_arguments(marks_parser)
     
+    # Web server command
+    web_parser = subparsers.add_parser("web", help="start web interface")
+    add_web_arguments(web_parser)
+    
     return parser
 
 
@@ -94,6 +99,8 @@ def main() -> None:
             handle_subjects_command(args)
         elif args.command == "marks":
             handle_marks_command(args)
+        elif args.command == "web":
+            handle_web_command(args)
         elif args.command == "app":
             handle_app_command(args)
         else:

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}About - FIB Manager{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">
+        <span class="prompt">$</span> about
+        <span class="cursor">█</span>
+    </h1>
+    <p class="page-desc">Information about FIB Manager</p>
+</section>
+
+<section class="about-content">
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// what is FIB Manager?</span>
+        </h2>
+        <p class="about-text">
+            FIB Manager is a schedule management tool designed for students at the 
+            <strong>Facultat d'Informàtica de Barcelona (FIB)</strong> - UPC. 
+            It helps you find optimal schedule combinations based on your preferences.
+        </p>
+    </div>
+
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// features</span>
+        </h2>
+        <ul class="feature-list">
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Search schedule combinations for multiple subjects
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Filter by time constraints (start/end hours)
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Filter by language preferences (EN, ES, CA)
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Limit maximum days with classes
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Blacklist specific groups
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Minimize dead hours between classes
+            </li>
+            <li>
+                <span class="feature-bullet">&gt;</span>
+                Interactive terminal and web interfaces
+            </li>
+        </ul>
+    </div>
+
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// installation</span>
+        </h2>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+            </div>
+            <pre class="code-content">
+<span class="line-number">1</span>  <span class="comment"># Install via pip</span>
+<span class="line-number">2</span>  <span class="keyword">pip</span> install fib-manager
+<span class="line-number">3</span>
+<span class="line-number">4</span>  <span class="comment"># Or clone from source</span>
+<span class="line-number">5</span>  <span class="keyword">git</span> clone https://github.com/zVictorium/fib-manager
+<span class="line-number">6</span>  <span class="keyword">cd</span> fib-manager
+<span class="line-number">7</span>  <span class="keyword">pip</span> install -e .</pre>
+        </div>
+    </div>
+
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// cli usage</span>
+        </h2>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+            </div>
+            <pre class="code-content">
+<span class="line-number">1</span>  <span class="comment"># Start interactive app</span>
+<span class="line-number">2</span>  <span class="keyword">fib-manager</span> app
+<span class="line-number">3</span>
+<span class="line-number">4</span>  <span class="comment"># Start web interface</span>
+<span class="line-number">5</span>  <span class="keyword">fib-manager</span> web
+<span class="line-number">6</span>
+<span class="line-number">7</span>  <span class="comment"># List subjects</span>
+<span class="line-number">8</span>  <span class="keyword">fib-manager</span> subjects -q {{ default_quad }}
+<span class="line-number">9</span>
+<span class="line-number">10</span> <span class="comment"># Search schedules</span>
+<span class="line-number">11</span> <span class="keyword">fib-manager</span> schedules -s PROP FM AC -v</pre>
+        </div>
+    </div>
+
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// tech stack</span>
+        </h2>
+        <div class="tech-grid">
+            <span class="tech-item">Python 3.8+</span>
+            <span class="tech-item">Flask</span>
+            <span class="tech-item">Rich</span>
+            <span class="tech-item">Questionary</span>
+            <span class="tech-item">Requests</span>
+        </div>
+    </div>
+
+    <div class="about-card">
+        <h2 class="about-title">
+            <span class="comment">// links</span>
+        </h2>
+        <div class="links-grid">
+            <a href="https://github.com/zVictorium/fib-manager" class="link-item" target="_blank">
+                <span class="link-icon">&gt;</span>
+                <span class="link-text">GitHub Repository</span>
+            </a>
+            <a href="https://www.fib.upc.edu" class="link-item" target="_blank">
+                <span class="link-icon">&gt;</span>
+                <span class="link-text">FIB-UPC Website</span>
+            </a>
+            <a href="https://api.fib.upc.edu" class="link-item" target="_blank">
+                <span class="link-icon">&gt;</span>
+                <span class="link-text">FIB API</span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

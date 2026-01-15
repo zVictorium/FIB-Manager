@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Search Schedules - FIB Manager{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">
+        <span class="prompt">$</span> schedules
+        <span class="cursor">█</span>
+    </h1>
+    <p class="page-desc">Find optimal schedule combinations for your subjects</p>
+</section>
+
+<section class="search-section">
+    <form action="{{ url_for('search_results') }}" method="POST" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="quad" class="form-label">--quadrimester</label>
+                <input type="text" id="quad" name="quad" value="{{ default_quad }}" class="form-input" placeholder="e.g., {{ default_quad }}">
+            </div>
+            <div class="form-group form-group-wide">
+                <label for="subjects" class="form-label">--subjects <span class="required">*</span></label>
+                <input type="text" id="subjects" name="subjects" class="form-input" placeholder="e.g., PROP, FM, AC" required>
+                <span class="form-hint">Comma-separated subject codes</span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_hour" class="form-label">--start</label>
+                <input type="number" id="start_hour" name="start_hour" value="8" min="8" max="21" class="form-input">
+                <span class="form-hint">Start hour (8-21)</span>
+            </div>
+            <div class="form-group">
+                <label for="end_hour" class="form-label">--end</label>
+                <input type="number" id="end_hour" name="end_hour" value="20" min="9" max="22" class="form-input">
+                <span class="form-hint">End hour (9-22)</span>
+            </div>
+            <div class="form-group">
+                <label for="max_days" class="form-label">--days</label>
+                <input type="number" id="max_days" name="max_days" value="5" min="1" max="5" class="form-input">
+                <span class="form-hint">Max days (1-5)</span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="languages" class="form-label">--languages</label>
+                <input type="text" id="languages" name="languages" class="form-input" placeholder="e.g., en, es, ca">
+                <span class="form-hint">Comma-separated language codes</span>
+            </div>
+            <div class="form-group">
+                <label for="max_dead_hours" class="form-label">--max-dead-hours</label>
+                <input type="number" id="max_dead_hours" name="max_dead_hours" value="-1" min="-1" class="form-input">
+                <span class="form-hint">-1 for no limit</span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group form-group-wide">
+                <label for="blacklist" class="form-label">--blacklist</label>
+                <input type="text" id="blacklist" name="blacklist" class="form-input" placeholder="e.g., IES-10, PROP-20">
+                <span class="form-hint">Comma-separated groups to exclude</span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group form-group-checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="freedom" name="freedom" class="form-checkbox">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">--freedom</span>
+                </label>
+                <span class="form-hint">Allow different subgroup than group</span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">
+                <span class="btn-icon">&gt;</span> Search Schedules
+            </button>
+            <button type="reset" class="btn btn-secondary">
+                <span class="btn-icon">×</span> Reset
+            </button>
+        </div>
+    </form>
+</section>
+
+<section class="help-section">
+    <h2 class="section-title">
+        <span class="comment">// usage examples</span>
+    </h2>
+    
+    <div class="code-block">
+        <div class="code-header">
+            <span class="code-lang">bash</span>
+        </div>
+        <pre class="code-content">
+<span class="line-number">1</span>  <span class="comment"># Basic search</span>
+<span class="line-number">2</span>  <span class="keyword">fib-manager</span> schedules -s PROP FM AC
+<span class="line-number">3</span>
+<span class="line-number">4</span>  <span class="comment"># With time constraints</span>
+<span class="line-number">5</span>  <span class="keyword">fib-manager</span> schedules -s PROP FM --start 10 --end 18
+<span class="line-number">6</span>
+<span class="line-number">7</span>  <span class="comment"># With language preference</span>
+<span class="line-number">8</span>  <span class="keyword">fib-manager</span> schedules -s PROP FM -l en es
+<span class="line-number">9</span>
+<span class="line-number">10</span> <span class="comment"># Maximum 4 days per week</span>
+<span class="line-number">11</span> <span class="keyword">fib-manager</span> schedules -s PROP FM --days 4</pre>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - FIB Manager{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">
+        <span class="prompt">$</span> results
+        <span class="cursor">█</span>
+    </h1>
+    <p class="page-desc">Found <strong>{{ total }}</strong> schedule combinations for <code>{{ subjects|join(', ') }}</code></p>
+</section>
+
+<section class="results-meta">
+    <div class="meta-info">
+        <span class="meta-item">
+            <span class="meta-label">quad:</span>
+            <span class="meta-value">{{ quad }}</span>
+        </span>
+        <span class="meta-item">
+            <span class="meta-label">hours:</span>
+            <span class="meta-value">{{ start_hour }}:00 - {{ end_hour }}:00</span>
+        </span>
+        <span class="meta-item">
+            <span class="meta-label">total:</span>
+            <span class="meta-value highlight">{{ total }}</span>
+        </span>
+    </div>
+    <a href="{{ url_for('search') }}" class="btn btn-secondary">
+        <span class="btn-icon">&lt;</span> New Search
+    </a>
+</section>
+
+{% if schedules %}
+<section class="schedules-section">
+    <div class="schedules-list">
+        {% for schedule in schedules[:50] %}
+        <div class="schedule-card" data-index="{{ loop.index }}">
+            <div class="schedule-header">
+                <span class="schedule-number">#{{ loop.index }}</span>
+                <span class="schedule-stats">
+                    {% if schedule.dead_hours is defined %}
+                    <span class="stat">
+                        <span class="stat-label">dead hrs:</span>
+                        <span class="stat-value">{{ schedule.dead_hours }}</span>
+                    </span>
+                    {% endif %}
+                    {% if schedule.days is defined %}
+                    <span class="stat">
+                        <span class="stat-label">days:</span>
+                        <span class="stat-value">{{ schedule.days }}</span>
+                    </span>
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="schedule-subjects">
+                {% for subject, info in schedule.subjects.items() %}
+                <div class="schedule-subject">
+                    <span class="subject-code">{{ subject }}</span>
+                    <span class="subject-group">
+                        G{{ info.group }}/{{ info.subgroup }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if schedule.url %}
+            <div class="schedule-actions">
+                <a href="{{ schedule.url }}" target="_blank" class="btn btn-link">
+                    View on FIB <span class="external-icon">↗</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if total > 50 %}
+    <div class="pagination-notice">
+        <span class="notice-icon">ℹ</span>
+        Showing 50 of {{ total }} results. Use CLI for full results.
+    </div>
+    {% endif %}
+</section>
+{% else %}
+<section class="no-results-section">
+    <div class="no-results">
+        <span class="no-results-icon">∅</span>
+        <h3>No schedules found</h3>
+        <p>Try adjusting your search parameters:</p>
+        <ul class="suggestions">
+            <li>Extend the time range</li>
+            <li>Increase max days</li>
+            <li>Remove language restrictions</li>
+            <li>Check subject codes</li>
+        </ul>
+        <a href="{{ url_for('search') }}" class="btn btn-primary">
+            <span class="btn-icon">&lt;</span> Try Again
+        </a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
