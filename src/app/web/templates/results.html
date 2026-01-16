@@ -34,7 +34,7 @@
 {% if schedules %}
 <section class="schedules-section">
     <div class="schedules-list">
-        {% for schedule in schedules[:50] %}
+        {% for schedule in schedules %}
         <div class="schedule-card" data-index="{{ loop.index }}">
             <div class="schedule-header">
                 <span class="schedule-number">#{{ loop.index }}</span>
@@ -78,13 +78,6 @@
         </div>
         {% endfor %}
     </div>
-    
-    {% if total > 50 %}
-    <div class="pagination-notice">
-        <span class="notice-icon">ℹ</span>
-        Showing 50 of {{ total }} results. Use CLI for full results.
-    </div>
-    {% endif %}
 </section>
 
 <!-- Calendar Modal -->
