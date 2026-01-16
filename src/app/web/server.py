@@ -133,8 +133,48 @@ def search_results():
         # Process schedules for display
         schedules = result.get('schedules', [])
         
+        # Fetch class data for calendar view
+        raw_data = fetch_classes_data(quad, 'en')
+        parsed_data = parse_classes_data(raw_data)
+        group_schedule, subgroup_schedule = split_schedule_by_group_type(parsed_data)
+        
+        # Build class times data for each schedule
+        import json
+        schedules_with_times = []
+        for schedule in schedules:
+            schedule_classes = []
+            for subject, info in schedule.get('subjects', {}).items():
+                group = str(info.get('group', ''))
+                subgroup = str(info.get('subgroup', ''))
+                
+                # Get group classes
+                if group and subject in group_schedule and group in group_schedule[subject]:
+                    for entry in group_schedule[subject][group]:
+                        schedule_classes.append({
+                            'subject': subject,
+                            'day': entry['day'],
+                            'hour': entry['hour'],
+                            'type': 'T',
+                            'group': group
+                        })
+                
+                # Get subgroup classes
+                if subgroup and subject in subgroup_schedule and subgroup in subgroup_schedule[subject]:
+                    for entry in subgroup_schedule[subject][subgroup]:
+                        schedule_classes.append({
+                            'subject': subject,
+                            'day': entry['day'],
+                            'hour': entry['hour'],
+                            'type': 'L',
+                            'group': subgroup
+                        })
+            
+            schedule['classes'] = schedule_classes
+            schedules_with_times.append(schedule)
+        
         return render_template('results.html',
-                             schedules=schedules,
+                             schedules=schedules_with_times,
+                             schedules_json=json.dumps(schedules_with_times),
                              total=result.get('total', 0),
                              quad=quad,
                              subjects=subjects,
