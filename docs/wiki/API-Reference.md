@@ -200,6 +200,7 @@ result = get_schedule_combinations(
     require_matching_subgroup=True,
     relax_days=0,
     blacklist=[],
+    whitelist=[],       # Groups that must be included
     max_dead_hours=-1,
     show_progress=True,
     sort_mode="groups"
@@ -368,6 +369,7 @@ For each combination:
     Validate max days constraint
     Calculate dead hours
     Skip if exceeds max_dead_hours
+    Verify all whitelisted groups are included
 ```
 
 ### 5. Sorting and Output

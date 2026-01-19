@@ -17,7 +17,7 @@ from functools import lru_cache
 from typing import Dict, List, Tuple, Set, Any, Iterator, FrozenSet, Optional
 
 from app.api import generate_schedule_url
-from app.core.utils import run_progress_thread
+from app.core.utils import run_progress_thread, is_whitelist_satisfied
 
 # Initialize module logger
 logger = logging.getLogger(__name__)
@@ -519,6 +519,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
                           require_matching: bool,
                           quadrimester: str,
                           max_dead_hours: int = -1,
+                          whitelist: List[List[Any]] = None,
                           show_progress: bool = False
                           ) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
@@ -541,6 +542,7 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
         require_matching: Whether to require matching groups and subgroups
         quadrimester: Quadrimester code
         max_dead_hours: Maximum allowed dead hours (-1 for no limit)
+        whitelist: List of [subject, group] pairs that must be included
         show_progress: Whether to show a progress bar
     
     Returns:
@@ -622,8 +624,14 @@ def merge_valid_schedules(group_combos: List[Dict[str, str]],
                 if dead_hours > max_dead_hours:
                     continue
             
-            # All checks passed - create schedule entry
+            # Create schedule entry before whitelist check
             subjects_entry = create_schedule_subjects(group_combo, subgroup_combo)
+            
+            # Check whitelist - schedule must include ALL whitelisted groups
+            if whitelist and not is_whitelist_satisfied(subjects_entry, whitelist):
+                continue
+            
+            # All checks passed - add schedule entry
             url = generate_schedule_url(subjects_entry, quadrimester)
             merged_schedules.append({"subjects": subjects_entry, "url": url})
             urls.append(url)

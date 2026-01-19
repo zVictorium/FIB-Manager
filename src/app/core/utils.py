@@ -106,6 +106,59 @@ def parse_blacklist(blacklist_items: list[str]) -> list[list[str, int]]:
     return parsed
 
 
+def parse_whitelist(whitelist_items: list[str]) -> list[list[str, int]]:
+    """
+    Parse a list of whitelisted groups.
+    
+    Args:
+        whitelist_items: List of whitelisted groups in the format "SUBJECT-GROUP"
+    
+    Returns:
+        List of [subject, group] pairs
+    """
+    parsed = []
+    for item in whitelist_items:
+        if "-" not in item:
+            continue
+        subject, group = item.split("-", 1)
+        if not group.isdigit():
+            continue
+        parsed.append([subject.upper(), int(group)])
+    return parsed
+
+
+def is_whitelist_satisfied(schedule_subjects: dict, whitelist: list[list]) -> bool:
+    """
+    Check if a schedule satisfies all whitelist requirements.
+    
+    A schedule satisfies the whitelist if it contains ALL whitelisted groups.
+    
+    Args:
+        schedule_subjects: Dictionary mapping subject codes to group information
+                          e.g., {'PROP': {'group': 10, 'subgroup': 11}, ...}
+        whitelist: List of [subject, group] pairs that must be included
+    
+    Returns:
+        True if all whitelisted groups are present, False otherwise
+    """
+    if not whitelist:
+        return True
+    
+    for subject, group in whitelist:
+        subject_info = schedule_subjects.get(subject)
+        if not subject_info:
+            return False
+        
+        # Check if the whitelisted group matches either the group or subgroup
+        schedule_group = subject_info.get('group')
+        schedule_subgroup = subject_info.get('subgroup')
+        
+        if schedule_group != group and schedule_subgroup != group:
+            return False
+    
+    return True
+
+
 def update_terminal_progress(count: int, total: int) -> None:
     """
     Update the progress bar in the terminal.

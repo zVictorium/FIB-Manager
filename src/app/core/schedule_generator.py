@@ -28,6 +28,7 @@ def get_schedule_combinations(
     require_matching_subgroup: bool,
     relax_days: int,
     blacklist: List[List[Any]],
+    whitelist: List[List[Any]] = None,
     max_dead_hours: int = -1,
     show_progress: bool = False,
     sort_mode: str = SORT_MODE_GROUPS,
@@ -43,7 +44,8 @@ def get_schedule_combinations(
         languages: List of allowed languages
         require_matching_subgroup: Whether to require matching groups and subgroups
         relax_days: Number of days to relax the schedule by
-        blacklist: List of [subject, group] pairs
+        blacklist: List of [subject, group] pairs to exclude
+        whitelist: List of [subject, group] pairs that must be included
         max_dead_hours: Maximum allowed dead hours (-1 for no limit)
         show_progress: Whether to show a progress bar
         sort_mode: Sort mode for schedules ("groups" or "dead_hours")
@@ -71,7 +73,7 @@ def get_schedule_combinations(
         group_schedule, subgroup_schedule,
         max_days, start_hour, end_hour,
         require_matching_subgroup, quadrimester,
-        max_dead_hours, show_progress
+        max_dead_hours, whitelist or [], show_progress
     )
     
     # Sort schedules based on the specified mode

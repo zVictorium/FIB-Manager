@@ -65,6 +65,14 @@
         </div>
 
         <div class="form-row">
+            <div class="form-group form-group-wide">
+                <label for="whitelist" class="form-label">--whitelist</label>
+                <input type="text" id="whitelist" name="whitelist" class="form-input" placeholder="e.g., IES-10, FM-11">
+                <span class="form-hint">Comma-separated groups that must be included</span>
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group form-group-checkbox">
                 <label class="checkbox-label">
                     <input type="checkbox" id="freedom" name="freedom" class="form-checkbox">
@@ -106,7 +114,10 @@
 <span class="line-number">8</span>  <span class="keyword">fib-manager</span> schedules -s PROP FM -l en es
 <span class="line-number">9</span>
 <span class="line-number">10</span> <span class="comment"># Maximum 4 days per week</span>
-<span class="line-number">11</span> <span class="keyword">fib-manager</span> schedules -s PROP FM --days 4</pre>
+<span class="line-number">11</span> <span class="keyword">fib-manager</span> schedules -s PROP FM --days 4
+<span class="line-number">12</span>
+<span class="line-number">13</span> <span class="comment"># With blacklist and whitelist</span>
+<span class="line-number">14</span> <span class="keyword">fib-manager</span> schedules -s PROP FM --blacklist PROP-20 --whitelist IES-10 FM-11</pre>
     </div>
 </section>
 {% endblock %}

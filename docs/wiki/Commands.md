@@ -90,6 +90,7 @@ fib-manager schedules -s <subjects> [options]
 | `--freedom` | Off | Allow different subgroup than group |
 | `--days` | `5` | Maximum days with classes (1-5) |
 | `--blacklist` | None | Groups to exclude (e.g., `IES-10`) |
+| `--whitelist` | None | Groups that must be included (e.g., `IES-10`) |
 | `--max-dead-hours` | `-1` | Maximum dead hours (-1 = no limit) |
 | `--sort` | `groups` | Sort by `groups` or `dead_hours` |
 | `-v`, `--view` | Off | Show results in interactive viewer |
@@ -121,6 +122,16 @@ fib-manager schedules -s IES XC PROP EDA --days 4
 fib-manager schedules -s IES XC --blacklist IES-10 XC-20
 ```
 
+**Whitelist groups that must be included:**
+```bash
+fib-manager schedules -s IES XC FM --whitelist IES-10 FM-11
+```
+
+**Combine blacklist and whitelist:**
+```bash
+fib-manager schedules -s IES XC FM --blacklist IES-20 --whitelist FM-11
+```
+
 **Limit dead hours:**
 ```bash
 fib-manager schedules -s IES XC PROP --max-dead-hours 2
@@ -147,6 +158,7 @@ fib-manager schedules \
   --days 4 \
   --max-dead-hours 2 \
   --blacklist IES-10 \
+  --whitelist XC-11 \
   --sort dead_hours \
   -v
 ```

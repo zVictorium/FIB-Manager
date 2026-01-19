@@ -10,7 +10,7 @@ from typing import Dict, List, Any, Optional
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 
-from app.core.utils import get_default_quadrimester, normalize_languages, parse_blacklist
+from app.core.utils import get_default_quadrimester, normalize_languages, parse_blacklist, parse_whitelist
 from app.core.parser import parse_classes_data, split_schedule_by_group_type
 from app.core.schedule_generator import get_schedule_combinations
 from app.api import fetch_classes_data, fetch_subject_names, generate_schedule_url
@@ -101,6 +101,7 @@ def search_results():
         freedom = request.form.get('freedom') == 'on'
         max_dead_hours = int(request.form.get('max_dead_hours', -1))
         blacklist_input = request.form.get('blacklist', '')
+        whitelist_input = request.form.get('whitelist', '')
     else:
         quad = request.args.get('quad', get_default_quadrimester())
         subjects_input = request.args.get('subjects', '')
@@ -111,11 +112,13 @@ def search_results():
         freedom = request.args.get('freedom', 'false').lower() == 'true'
         max_dead_hours = int(request.args.get('max_dead_hours', -1))
         blacklist_input = request.args.get('blacklist', '')
+        whitelist_input = request.args.get('whitelist', '')
     
     # Parse inputs
     subjects = [s.strip().upper() for s in subjects_input.split(',') if s.strip()]
     languages = normalize_languages([l.strip() for l in languages_input.split(',') if l.strip()])
     blacklist = parse_blacklist([b.strip() for b in blacklist_input.split(',') if b.strip()])
+    whitelist = parse_whitelist([w.strip() for w in whitelist_input.split(',') if w.strip()])
     
     if not subjects:
         return render_template('error.html', error='No subjects specified')
@@ -201,6 +204,7 @@ def search_api():
     freedom = data.get('freedom', False)
     max_dead_hours = data.get('max_dead_hours', -1)
     blacklist = parse_blacklist(data.get('blacklist', []))
+    whitelist = parse_whitelist(data.get('whitelist', []))
     
     if not subjects:
         return jsonify({'success': False, 'error': 'No subjects specified'})
@@ -212,7 +216,7 @@ def search_api():
         result = get_schedule_combinations(
             quad, subjects, start_hour, end_hour,
             languages, same_subgroup, relax_days,
-            blacklist, max_dead_hours
+            blacklist, whitelist, max_dead_hours
         )
         
         return jsonify({
