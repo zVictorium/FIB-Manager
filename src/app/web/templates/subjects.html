@@ -12,7 +12,7 @@
 </section>
 
 <section class="filter-section">
-    <form action="{{ url_for('subjects') }}" method="GET" class="filter-form">
+    <form action="{{ url_for('subjects') }}" method="GET" class="filter-form" data-form-cache="subjects-form">
         <div class="form-group">
             <label for="quad" class="form-label">--quadrimester</label>
             <input type="text" id="quad" name="quad" value="{{ quad }}" class="form-input" placeholder="e.g., {{ default_quad }}">
