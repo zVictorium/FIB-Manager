@@ -130,7 +130,7 @@ def search_results():
         result = get_schedule_combinations(
             quad, subjects, start_hour, end_hour,
             languages, same_subgroup, relax_days,
-            blacklist, max_dead_hours
+            blacklist, whitelist, max_dead_hours
         )
         
         # Process schedules for display
